@@ -1,26 +1,102 @@
-@import "tailwindcss";
+@config "../tailwind.config.cjs";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* HSL tokens (dark-first). Tweak to your brand later. */
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* light theme (if you ever remove .dark on <html>) */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 168 77% 66%;     /* ≈ #5EEAD4 */
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 168 77% 66%;
+  }
+  .dark {
+    /* dark theme */
+    --background: 222.2 84% 4.9%;     /* dark navy background */
+    --foreground: 210 40% 98% !important;  /* off-white */        /* ✅ much brighter body text */
+    --card: 222.2 84% 8%;
+    --card-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 18% 78%;  /* slightly lighter for subtext */
+    --primary: 168 77% 60%;
+    --primary-foreground: 222 47% 10%;
+    --secondary: 217 25% 20%;
+    --secondary-foreground: 210 40% 96%;
+    --accent: 168 77% 66%;
+    --accent-foreground: 222.2 47% 10%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 168 77% 66%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --popover: 222.2 84% 6%;
+    --popover-foreground: 210 40% 96%;
+  }
+
+  html, body { height: 100%; }
+  html { color-scheme: dark; }
+
+  /* Use raw CSS with tokens for base colors */
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground)) !important;
+    @apply antialiased;
+  }
+
+  /* Global default border color without @apply */
+  * { border-color: hsl(var(--border)); }
+}
+
+/* MDX & components */
+@layer components {
+  .prose {
+    @apply prose-invert max-w-none;
+    --tw-prose-body: hsl(var(--foreground));
+    --tw-prose-headings: hsl(var(--foreground));
+    --tw-prose-links: hsl(var(--accent));
+    --tw-prose-bold: hsl(var(--foreground));
+    --tw-prose-quotes: hsl(var(--foreground));
+    --tw-prose-captions: hsl(var(--muted-foreground));
+    --tw-prose-code: hsl(var(--foreground));
+    --tw-prose-hr: hsl(var(--border));
+    --tw-prose-th-borders: hsl(var(--border));
+    --tw-prose-td-borders: hsl(var(--border));
+  }
+  .prose a { color: hsl(var(--accent)); text-decoration: underline; }
+  /* Optional: slightly dim secondary text inside posts */
+  .prose p, .prose li {
+    color: hsl(var(--foreground));
+  }
+  .prose strong, .prose h1, .prose h2, .prose h3, .prose h4 {
+    color: hsl(var(--foreground));
+  }
+  .prose a {
+    color: hsl(var(--accent));
+    text-decoration: underline;
+  }
+
+  /* Footer legibility */
+  footer, .site-footer {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .ui-card {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border: 1px solid hsl(var(--border));
+    box-shadow: theme('boxShadow.soft');
+    @apply rounded-2xl;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Focus ring */
+:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
