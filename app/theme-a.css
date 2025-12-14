@@ -1,0 +1,23 @@
+@layer base {
+  :root {
+    --background: 36 33% 96%;         /* warm paper */
+    --foreground: 220 18% 14%;        /* charcoal */
+    --card: 0 0% 100%;
+    --card-foreground: 220 18% 14%;
+
+    --muted: 34 20% 92%;
+    --muted-foreground: 220 10% 38%;
+
+    --accent: 162 28% 36%;            /* sage/green */
+    --accent-foreground: 0 0% 100%;
+
+    --border: 34 14% 82%;             /* warm border */
+    --input: 34 14% 82%;
+    --ring: 162 28% 36%;
+
+    --radius: 1.1rem;
+    --shadow-soft: 0 14px 34px rgba(15, 23, 42, 0.12);
+    --secondary: 34 20% 92%;
+    --secondary-foreground: 220 18% 14%;
+  }
+}
