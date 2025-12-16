@@ -1,13 +1,12 @@
-// components/Hero.tsx
 import Image from "next/image";
 import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-6 pb-4 sm:pt-10 sm:pb-6">
-      <div className="ui-card overflow-hidden">
-        {/* Image canvas */}
-         <div className="relative w-full aspect-[4/5] max-h-[420px] sm:aspect-[3/2] sm:max-h-none">
+    <section className="mx-auto max-w-6xl px-0 sm:px-6 pt-4 sm:pt-10">
+      {/* Full-bleed on mobile, card on desktop */}
+      <div className="overflow-hidden sm:ui-card">
+        <div className="relative w-full aspect-[9/14] sm:aspect-[3/2]">
           <Image
             src="/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp"
             alt="Custom woodworking project by 531 Workshop"
@@ -17,43 +16,37 @@ export default function Hero() {
             sizes="100vw"
           />
 
-          {/* Overlay: slightly stronger on mobile for legibility */}
-          <div className="absolute inset-0 bg-black/45 sm:bg-black/35" />
+          {/* Stronger overlay on mobile for legibility */}
+          <div className="absolute inset-0 bg-black/50 sm:bg-black/35" />
 
-          {/* Text overlay: centered on mobile, bottom-aligned on desktop */}
-          <div className="absolute inset-0 flex items-center sm:items-end">
+          {/* Content */}
+          <div className="absolute inset-0 flex items-end">
             <div className="w-full p-4 sm:p-10">
               <div className="max-w-2xl">
-                <p className="text-sm text-white/85">
-                  Custom woodworking • Built-ins • Furniture
+                <p className="text-xs tracking-wide uppercase text-white/80">
+                  Custom woodworking
                 </p>
 
-                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  Handcrafted pieces that feel at home.
+                <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Made to fit your space.
                 </h1>
 
-                {/* Desktop copy */}
-                <p className="mt-4 hidden sm:block text-base leading-7 text-white/80">
-                  531 Workshop designs and builds custom furniture, shelving, and
-                  built-ins—made with durable materials and a clean, timeless style.
+                <p className="mt-3 text-sm leading-6 text-white/80 sm:text-base sm:leading-7">
+                  Furniture, shelving, and built-ins—designed, built, and finished with care.
                 </p>
 
-                {/* Mobile copy */}
-                <p className="mt-4 sm:hidden text-base leading-7 text-white/80">
-                  Custom builds, made to fit your space.
-                </p>
-
-                <div className="mt-6 flex flex-wrap gap-3">
+                {/* CTAs: stack on mobile so both are visible */}
+                <div className="mt-5 grid gap-3 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
                   <Link
                     href="/contact"
-                    className="px-5 py-3 rounded-2xl text-sm font-medium bg-white text-black hover:opacity-90 transition"
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-medium bg-white text-black hover:opacity-90 transition text-center"
                   >
                     Request a quote
                   </Link>
 
                   <Link
                     href="/gallery1"
-                    className="px-5 py-3 rounded-2xl text-sm font-medium border border-white/40 text-white hover:bg-white/10 transition"
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-medium border border-white/45 text-white hover:bg-white/10 transition text-center"
                   >
                     View gallery
                   </Link>
@@ -63,13 +56,11 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Caption removed for now to reduce hero height and match rhythm below */}
+        {/* Caption bar only on desktop to keep mobile tight */}
+        <div className="hidden sm:block px-10 py-3 text-sm text-muted-foreground">
+          Built to fit your space, finished with care.
+        </div>
       </div>
-
-      {/* Optional caption below hero (lighter weight than inside the card) */}
-      <p className="mt-3 text-sm text-muted-foreground">
-        Built to fit your space, finished with care.
-      </p>
     </section>
   );
 }
