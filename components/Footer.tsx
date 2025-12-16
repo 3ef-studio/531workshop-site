@@ -41,10 +41,10 @@ export default function Footer() {
           <p>Serving the greater Chicagoland area</p>
           <p className="mt-2">
             <a
-              href="mailto:hello@531workshop.com"
+              href="mailto:531workshop@gmail.com"
               className="hover:text-foreground transition-colors"
             >
-              hello@531workshop.com
+              531workshop@gmail.com
             </a>
           </p>
         </div>

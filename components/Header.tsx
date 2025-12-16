@@ -29,6 +29,12 @@ export default function Header() {
             Gallery 2
           </Link>
           <Link
+            href="/about"
+            className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
+          >
+            About
+          </Link>
+          <Link
             href="/contact"
             className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
           >
