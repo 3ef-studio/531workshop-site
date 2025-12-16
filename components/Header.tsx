@@ -1,7 +1,20 @@
-// components/Header.tsx
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+
+const NavItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <Link
+    href={href}
+    className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
+  >
+    {children}
+  </Link>
+);
 
 export default function Header() {
+  const [open, setOpen] = useState(false);
+
   return (
     <header className="border-b border-border">
       <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
@@ -9,39 +22,49 @@ export default function Header() {
           531 Workshop
         </Link>
 
-        <nav className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
-          >
-            Home
-          </Link>
-          <Link
-            href="/gallery1"
-            className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
-          >
-            Gallery 1
-          </Link>
-          <Link
-            href="/gallery2"
-            className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
-          >
-            Gallery 2
-          </Link>
-          <Link
-            href="/about"
-            className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
-          >
-            About
-          </Link>
-          <Link
-            href="/contact"
-            className="px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
-          >
-            Contact
-          </Link>
+        {/* Desktop nav */}
+        <nav className="hidden sm:flex items-center gap-2">
+          <NavItem href="/">Home</NavItem>
+          <NavItem href="/gallery1">Gallery 1</NavItem>
+          <NavItem href="/gallery2">Gallery 2</NavItem>
+          <NavItem href="/about">About</NavItem>
+          <NavItem href="/contact">Contact</NavItem>
         </nav>
+
+        {/* Mobile button */}
+        <button
+          type="button"
+          className="sm:hidden inline-flex items-center justify-center rounded-xl border border-border px-3 py-2 text-sm"
+          aria-label="Open menu"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          ☰
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      {open ? (
+        <div className="sm:hidden border-t border-border">
+          <nav className="mx-auto max-w-6xl px-6 py-3 flex flex-col gap-1">
+            <Link onClick={() => setOpen(false)} href="/" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
+              Home
+            </Link>
+            <Link onClick={() => setOpen(false)} href="/gallery1" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
+              Gallery 1
+            </Link>
+            <Link onClick={() => setOpen(false)} href="/gallery2" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
+              Gallery 2
+            </Link>
+            <Link onClick={() => setOpen(false)} href="/about" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
+              About
+            </Link>
+            <Link onClick={() => setOpen(false)} href="/contact" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
+              Contact
+            </Link>
+          </nav>
+        </div>
+      ) : null}
     </header>
   );
 }
