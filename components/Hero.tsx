@@ -7,7 +7,7 @@ export default function Hero() {
     <section className="mx-auto max-w-6xl px-6 pt-6 pb-4 sm:pt-10 sm:pb-6">
       <div className="ui-card overflow-hidden">
         {/* Image canvas */}
-         <div className="relative w-full aspect-[1/1] max-h-[420px] sm:aspect-[3/2] sm:max-h-none">
+         <div className="relative w-full aspect-[4/5] max-h-[420px] sm:aspect-[3/2] sm:max-h-none">
           <Image
             src="/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp"
             alt="Custom woodworking project by 531 Workshop"
