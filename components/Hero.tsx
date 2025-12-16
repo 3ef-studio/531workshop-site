@@ -1,11 +1,13 @@
+// components/Hero.tsx
 import Image from "next/image";
 import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-10 pb-6 sm:pt-14">
+    <section className="mx-auto max-w-6xl px-6 pt-6 pb-4 sm:pt-10 sm:pb-6">
       <div className="ui-card overflow-hidden">
-        <div className="relative w-full min-h-130 sm:min-h-0 sm:aspect-3/2">
+        {/* Image canvas */}
+        <div className="relative w-full max-h-105 sm:max-h-none sm:aspect-3/2">
           <Image
             src="/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp"
             alt="Custom woodworking project by 531 Workshop"
@@ -15,12 +17,12 @@ export default function Hero() {
             sizes="100vw"
           />
 
-          {/* Overlay: slightly stronger on mobile */}
+          {/* Overlay: slightly stronger on mobile for legibility */}
           <div className="absolute inset-0 bg-black/45 sm:bg-black/35" />
 
-          {/* Text overlay: centered on mobile, bottom on desktop */}
+          {/* Text overlay: centered on mobile, bottom-aligned on desktop */}
           <div className="absolute inset-0 flex items-center sm:items-end">
-            <div className="w-full p-6 sm:p-10">
+            <div className="w-full p-4 sm:p-10">
               <div className="max-w-2xl">
                 <p className="text-sm text-white/85">
                   Custom woodworking • Built-ins • Furniture
@@ -30,13 +32,13 @@ export default function Hero() {
                   Handcrafted pieces that feel at home.
                 </h1>
 
-                {/* Hide long body copy on very small screens */}
+                {/* Desktop copy */}
                 <p className="mt-4 hidden sm:block text-base leading-7 text-white/80">
                   531 Workshop designs and builds custom furniture, shelving, and
                   built-ins—made with durable materials and a clean, timeless style.
                 </p>
 
-                {/* Optional short line for mobile */}
+                {/* Mobile copy */}
                 <p className="mt-4 sm:hidden text-base leading-7 text-white/80">
                   Custom builds, made to fit your space.
                 </p>
@@ -61,10 +63,13 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="px-6 py-4 sm:px-10 text-sm text-muted-foreground">
-          Built to fit your space, finished with care.
-        </div>
+        {/* Caption removed for now to reduce hero height and match rhythm below */}
       </div>
+
+      {/* Optional caption below hero (lighter weight than inside the card) */}
+      <p className="mt-3 text-sm text-muted-foreground">
+        Built to fit your space, finished with care.
+      </p>
     </section>
   );
 }
