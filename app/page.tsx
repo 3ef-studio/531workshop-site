@@ -32,6 +32,9 @@ export default function Home() {
         </div>
       </section>
 
+      <a href="/gallery1" className="ui-link">Gallery Option 1</a>
+      <a href="/gallery2" className="ui-link">Gallery Option 2</a>
+
       {/* Feature Cards */}
       <section className="mt-10 grid gap-6 md:grid-cols-3">
         <div className="ui-card p-6">

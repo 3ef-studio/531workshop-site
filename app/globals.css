@@ -1,7 +1,5 @@
 @config "../tailwind.config.cjs";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   /* Token contract (values set by theme-a.css or theme-b.css) */
