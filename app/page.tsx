@@ -102,11 +102,6 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mt-10 text-sm">
-        <p style={{ color: "hsl(var(--muted-foreground))" }}>
-          Switch themes by changing the import in <code>app/layout.tsx</code>.
-        </p>
-      </footer>
     </main>
   );
 }

@@ -24,7 +24,7 @@ export default function Hero() {
             <div className="w-full p-6 sm:p-10">
               <div className="max-w-2xl">
                 <p className="text-sm text-white/80">
-                  Custom woodworking • Built-ins • Furniture
+                  Custom woodworking • Crafted for your home
                 </p>
 
                 <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -32,8 +32,7 @@ export default function Hero() {
                 </h1>
 
                 <p className="mt-4 text-base leading-7 text-white/80">
-                  531 Workshop designs and builds custom furniture, shelving, and
-                  built-ins—made with durable materials and a clean, timeless style.
+                  531 Workshop provides hardwood furniture that is custom designed and crafted just for you, built to last a lifetime.
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-3">

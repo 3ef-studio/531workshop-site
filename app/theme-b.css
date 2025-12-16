@@ -1,23 +1,26 @@
+/* app/theme-b.css — Clean Nordic (distinct, same brand) */
 @layer base {
   :root {
-    --background: 210 24% 98%;        /* cool white */
-    --foreground: 222 20% 12%;        /* graphite */
-    --card: 210 20% 99%;              /* slightly tinted card */
-    --card-foreground: 222 20% 12%;
+    --background: 40 20% 98%;         /* cleaner off-white */
+    --foreground: 222 22% 12%;        /* slightly crisper charcoal */
 
-    --muted: 210 16% 92%;
-    --muted-foreground: 215 12% 40%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 22% 12%;
 
-    --accent: 213 44% 40%;            /* steel blue */
+    --muted: 40 16% 94%;
+    --muted-foreground: 222 10% 34%;
+
+    --accent: 210 24% 38%;            /* slate/steel blue */
     --accent-foreground: 0 0% 100%;
 
-    --border: 214 16% 80%;            /* crisper border */
-    --input: 214 16% 80%;
-    --ring: 213 44% 40%;
+    --border: 40 10% 84%;
+    --input: 40 10% 84%;
+    --ring: 210 24% 38%;
 
-    --radius: 0.85rem;
-    --shadow-soft: 0 10px 20px rgba(15, 23, 42, 0.08);
-    --secondary: 210 16% 92%;
-    --secondary-foreground: 222 20% 12%;
+    /* Keep system constants identical to Theme A */
+    --radius: 1.1rem;
+    --shadow-soft: 0 14px 34px rgba(15, 23, 42, 0.12);
+    --secondary: 40 16% 94%;
+    --secondary-foreground: 222 22% 12%;
   }
 }
