@@ -1,40 +1,9 @@
+import Hero from "@/components/Hero";
+
 export default function Home() {
   return (
     <main className="mx-auto max-w-6xl p-6 sm:p-10">
-      {/* Hero */}
-      <section className="ui-card p-8 sm:p-10">
-        <p className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-          531 Workshop · Website Rebuild (Sprint 2)
-        </p>
-
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Clean, light, Scandinavian-inspired.
-        </h1>
-
-        <p
-          className="mt-4 max-w-2xl text-base leading-7"
-          style={{ color: "hsl(var(--muted-foreground))" }}
-        >
-          This page is a styling preview to compare Theme A vs Theme B. Same layout, same
-          components — only tokens change.
-        </p>
-
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <a href="/contact" className="ui-btn ui-btn-primary inline-flex items-center justify-center">
-            Request a Quote
-          </a>
-          <a href="/gallery" className="ui-btn ui-btn-secondary inline-flex items-center justify-center">
-            View Gallery
-          </a>
-          <a href="/about" className="ui-link inline-flex items-center justify-center">
-            About the Shop
-          </a>
-        </div>
-      </section>
-
-      <a href="/gallery1" className="ui-link">Gallery Option 1</a>
-      <a href="/gallery2" className="ui-link">Gallery Option 2</a>
-
+      <Hero />
       {/* Feature Cards */}
       <section className="mt-10 grid gap-6 md:grid-cols-3">
         <div className="ui-card p-6">
