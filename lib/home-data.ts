@@ -43,7 +43,7 @@ export const FEATURED_ITEMS: FeaturedItem[] = [
     id: "feat-1",
     title: "Checkerboard Cutting Board",
     description: "A beautiful checkerboard pattern with a durable finish.",
-    imageSrc: "/images/projects/Checkerboard-Cutting-Board.webp",
+    imageSrc: "/images/projects/Checkerboard-cutting-board.webp",
     href: "/gallery1",
     tag: "Featured",
   },
