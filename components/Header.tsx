@@ -1,7 +1,36 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
+
+export function BrandLogo() {
+  return (
+    <Link href="/" className="flex items-center gap-3">
+      {/* Light mode logo */}
+      <Image
+        src="/brand/logo-black.png"
+        alt="531 Workshop"
+        width={56}
+        height={56}
+        className="block dark:hidden"
+        priority
+      />
+      {/* Dark mode logo */}
+      <Image
+        src="/brand/logo-white.png"
+        alt="531 Workshop"
+        width={56}
+        height={56}
+        className="hidden dark:block"
+        priority
+      />
+      <span className="text-sm font-semibold tracking-tight">
+        531 Workshop
+      </span>
+    </Link>
+  );
+}
 
 const NavItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <Link
@@ -18,7 +47,10 @@ export default function Header() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="text-lg font-semibold tracking-tight"
+        >
           531 Workshop
         </Link>
 

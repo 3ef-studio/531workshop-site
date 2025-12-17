@@ -19,6 +19,20 @@ export default function Hero() {
           {/* Stronger overlay on mobile for legibility */}
           <div className="absolute inset-0 bg-black/50 sm:bg-black/35" />
 
+          {/* Logo watermark (subtle) */}
+          <div className="pointer-events-none absolute bottom-4 right-4 sm:bottom-8 sm:right-8">
+            <div className="relative w-[120px] h-[120px] sm:w-[180px] sm:h-[180px] opacity-60">
+              <Image
+                src="/brand/logo-white.png"
+                alt=""
+                fill
+                aria-hidden="true"
+                className="object-contain"
+                sizes="180px"
+              />
+            </div>
+          </div>
+
           {/* Content */}
           <div className="absolute inset-0 flex items-end">
             <div className="w-full p-4 sm:p-10">
