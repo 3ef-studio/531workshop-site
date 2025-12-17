@@ -6,7 +6,7 @@ export default function Hero() {
     <section className="mx-auto max-w-6xl px-0 sm:px-6 pt-4 sm:pt-10">
       {/* Full-bleed on mobile, card on desktop */}
       <div className="overflow-hidden sm:ui-card">
-        <div className="relative w-full aspect-[9/14] sm:aspect-[3/2]">
+        <div className="relative w-full aspect-9/14 sm:aspect-3/2">
           <Image
             src="/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp"
             alt="Custom woodworking project by 531 Workshop"
@@ -21,7 +21,7 @@ export default function Hero() {
 
           {/* Logo watermark (subtle) */}
           <div className="pointer-events-none absolute top-3 right-3 sm:top-6 sm:right-6">
-            <div className="relative w-[120px] h-[120px] sm:w-[180px] sm:h-[180px] opacity-60">
+            <div className="relative w-30 h-30 sm:w-45 sm:h-45 opacity-60">
               <Image
                 src="/brand/logo-white.png"
                 alt=""

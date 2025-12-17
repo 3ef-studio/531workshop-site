@@ -46,7 +46,7 @@ export default function AboutPage() {
         <aside className="lg:col-span-5">
           <div className="lg:sticky lg:top-24">
             <div className="ui-card overflow-hidden">
-              <div className="relative aspect-[4/5]">
+              <div className="relative aspect-4/5">
                 <Image
                   src="/images/projects/Profile-pic-1.webp"
                   alt="Workshop in progress"

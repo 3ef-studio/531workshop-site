@@ -84,6 +84,9 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     src: "/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp",
     alt: "Epoxy River Coffee Table Sycamore",
     title: "Epoxy River Coffee Table Sycamore",
+    materials: ["Sycamore", "Epoxy"],
+    year: "2021",
+    dimensions: "48\" x 24\" x 18\"",
   },
   {
     id: "p08",
