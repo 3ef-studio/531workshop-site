@@ -56,7 +56,6 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-2">
-          <NavItem href="/">Home</NavItem>
           <NavItem href="/gallery1">Gallery 1</NavItem>
           <NavItem href="/gallery2">Gallery 2</NavItem>
           <NavItem href="/shop">Shop</NavItem>
@@ -80,9 +79,6 @@ export default function Header() {
       {open ? (
         <div className="sm:hidden border-t border-border">
           <nav className="mx-auto max-w-6xl px-6 py-3 flex flex-col gap-1">
-            <Link onClick={() => setOpen(false)} href="/" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
-              Home
-            </Link>
             <Link onClick={() => setOpen(false)} href="/gallery1" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
               Gallery 1
             </Link>

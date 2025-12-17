@@ -5,7 +5,7 @@ import { VALUE_PROPS, FEATURED_ITEMS, TESTIMONIALS, TESTIMONIAL_META } from "@/l
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl p-6 sm:p-10">
+    <main className="mx-auto max-w-6xl p-3 sm:p-3">
       <Hero />
 
       {/* Value Props */}

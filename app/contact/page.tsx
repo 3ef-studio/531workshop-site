@@ -18,9 +18,6 @@ export default function ContactPage() {
           <div className="ui-card p-6 sm:p-8">
             <ContactForm />
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Note: Form submission is currently disabled for design review. We’ll wire this up next.
-          </p>
         </div>
 
         {/* Contact info / expectations */}
