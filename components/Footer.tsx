@@ -1,59 +1,52 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Footer() {
   return (
     <footer className="border-t border-border mt-16">
-      <div className="mx-auto max-w-6xl px-6 py-10 grid gap-6 sm:grid-cols-3">
-        {/* Brand */}
-        <div>
-          <div className="text-sm font-semibold tracking-tight">
-            531 Workshop
+      <div className="mx-auto max-w-6xl px-6 py-12 text-sm text-muted-foreground">
+        <div className="grid gap-10 sm:grid-cols-12 sm:items-start">
+          {/* Left: logo */}
+          <div className="sm:col-span-4 flex justify-center sm:justify-start">
+            <Image
+              src="/brand/logo-black.png"
+              alt="531 Workshop"
+              width={140}
+              height={140}
+              className="dark:hidden"
+            />
+            <Image
+              src="/brand/logo-white.png"
+              alt="531 Workshop"
+              width={140}
+              height={140}
+              className="hidden dark:block"
+            />
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Custom woodworking & built-ins. Designed and crafted with care.
-          </p>
-        </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-col gap-2 text-sm">
-          <Link
-            href="/"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Home
-          </Link>
-          <Link
-            href="/gallery1"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Gallery
-          </Link>
-          <Link
-            href="/contact"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Contact
-          </Link>
-        </nav>
+          {/* Right: text + links */}
+          <div className="sm:col-span-8">
+            <p className="max-w-prose text-center sm:text-left">
+              Custom woodworking, built-ins, and furniture — designed and crafted
+              with care.
+            </p>
 
-        {/* Contact / Service area */}
-        <div className="text-sm text-muted-foreground">
-          <p>Serving the greater Chicagoland area</p>
-          <p className="mt-2">
-            <a
-              href="mailto:531workshop@gmail.com"
-              className="hover:text-foreground transition-colors"
-            >
-              531workshop@gmail.com
-            </a>
-          </p>
-        </div>
-      </div>
+            <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-6">
+              <Link href="/gallery1" className="hover:underline">
+                Gallery
+              </Link>
+              <Link href="/about" className="hover:underline">
+                About
+              </Link>
+              <Link href="/contact" className="hover:underline">
+                Contact
+              </Link>
+            </div>
 
-      <div className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-4 text-xs text-muted-foreground flex justify-between">
-          <span>© {new Date().getFullYear()} 531 Workshop</span>
-          <span>Built with care</span>
+            <div className="mt-6 text-xs text-center sm:text-left">
+              © {new Date().getFullYear()} 531 Workshop. All rights reserved.
+            </div>
+          </div>
         </div>
       </div>
     </footer>

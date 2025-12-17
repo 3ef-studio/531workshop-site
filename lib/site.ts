@@ -1,5 +1,5 @@
 export const SITE = {
-  name: "3EF Studio",
-  description: "Three Eagles Forge Studio — Where ideas are forged, and products take flight.",
+  name: "531 Workshop",
+  description: "531 Workshop — Custom woodworking and furniture design.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
 };
