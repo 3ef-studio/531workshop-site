@@ -20,7 +20,7 @@ export default function Hero() {
           <div className="absolute inset-0 bg-black/50 sm:bg-black/35" />
 
           {/* Logo watermark (subtle) */}
-          <div className="pointer-events-none absolute bottom-4 right-4 sm:bottom-8 sm:right-8">
+          <div className="pointer-events-none absolute top-3 right-3 sm:top-6 sm:right-6">
             <div className="relative w-[120px] h-[120px] sm:w-[180px] sm:h-[180px] opacity-60">
               <Image
                 src="/brand/logo-white.png"
