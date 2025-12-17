@@ -59,6 +59,7 @@ export default function Header() {
           <NavItem href="/">Home</NavItem>
           <NavItem href="/gallery1">Gallery 1</NavItem>
           <NavItem href="/gallery2">Gallery 2</NavItem>
+          <NavItem href="/shop">Shop</NavItem>
           <NavItem href="/about">About</NavItem>
           <NavItem href="/contact">Contact</NavItem>
         </nav>
@@ -87,6 +88,9 @@ export default function Header() {
             </Link>
             <Link onClick={() => setOpen(false)} href="/gallery2" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
               Gallery 2
+            </Link>
+            <Link onClick={() => setOpen(false)} href="/shop" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
+              Shop
             </Link>
             <Link onClick={() => setOpen(false)} href="/about" className="px-3 py-2 rounded-xl text-sm hover:bg-card/60">
               About
