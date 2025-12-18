@@ -15,7 +15,7 @@ export default function Gallery1Page() {
 
       <section className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
         {GALLERY_IMAGES.map((item) => (
-          <GalleryCard key={item.id} item={item} aspect="landscape" showTitle={true} titleOnHover={false} />
+          <GalleryCard key={item.id} item={item} aspect="landscape" showTitle={true} titleOnHover={false} scaleOnHover/>
         ))}
       </section>
     </main>

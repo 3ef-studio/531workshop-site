@@ -6,6 +6,7 @@ type Props = {
   aspect?: "square" | "landscape" | "portrait";
   showTitle?: boolean;
   titleOnHover?: boolean;
+  scaleOnHover?: boolean; // ✅ optional
   fillParent?: boolean;
 };
 
@@ -20,6 +21,7 @@ export default function GalleryCard({
   aspect = "landscape",
   showTitle = true,
   titleOnHover = false,
+  scaleOnHover = false, // ✅ add default
   fillParent = false,
 }: Props) {
   const title = item.title ?? item.alt;
@@ -34,7 +36,10 @@ export default function GalleryCard({
           src={item.src}
           alt={item.alt}
           fill
-          className="object-cover"
+          className={[
+            "object-cover transition-transform duration-300 ease-out",
+            scaleOnHover ? "group-hover:scale-[1.03]" : "",
+          ].join(" ")}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
 

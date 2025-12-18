@@ -87,15 +87,36 @@
   }
 
   .ui-btn-primary {
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
-    border-color: transparent;
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border: 1px solid transparent;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+  .ui-btn-primary:hover {
+    border-color: hsl(var(--accent));
+    box-shadow: 0 0 0 1px hsl(var(--accent) / 0.35);
   }
 
   .ui-btn-secondary {
-    background: hsl(var(--secondary));
-    color: hsl(var(--secondary-foreground));
+    background-color: transparent;
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    transition:
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
   }
+
+  .ui-btn-secondary:hover {
+    border-color: hsl(var(--accent));
+    box-shadow: 0 0 0 1px hsl(var(--accent) / 0.35);
+    color: hsl(var(--foreground));
+  }
+
   .ui-input {
     width: 100%;
     padding: 0.6rem 0.75rem;
