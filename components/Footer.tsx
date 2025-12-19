@@ -32,7 +32,7 @@ export default function Footer() {
             </p>
 
             <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-6">
-              <Link href="/gallery1" className="hover:underline">
+              <Link href="/gallery2" className="hover:underline">
                 Gallery
               </Link>
               <Link href="/about" className="hover:underline">
