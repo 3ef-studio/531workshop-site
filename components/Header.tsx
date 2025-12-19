@@ -85,8 +85,8 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-2">
-          <NavItem href="/gallery2">Custom Gallery</NavItem>
           <NavItem href="/shop">Shop</NavItem>
+          <NavItem href="/gallery2">Custom Gallery</NavItem>
           <NavItem href="/about">About</NavItem>
           <NavItem href="/contact">Contact</NavItem>
         </nav>
@@ -107,19 +107,19 @@ export default function Header() {
       {open ? (
         <div className="sm:hidden border-t border-border bg-background/95 backdrop-blur">
           <nav className="mx-auto max-w-6xl px-6 py-3 flex flex-col gap-1">
+             <Link
+              onClick={() => setOpen(false)}
+              href="/shop"
+              className="px-3 py-2 rounded-xl text-sm hover:bg-card/60"
+            >
+              Shop
+            </Link>
             <Link
               onClick={() => setOpen(false)}
               href="/gallery2"
               className="px-3 py-2 rounded-xl text-sm hover:bg-card/60"
             >
               Custom Gallery
-            </Link>
-            <Link
-              onClick={() => setOpen(false)}
-              href="/shop"
-              className="px-3 py-2 rounded-xl text-sm hover:bg-card/60"
-            >
-              Shop
             </Link>
             <Link
               onClick={() => setOpen(false)}
