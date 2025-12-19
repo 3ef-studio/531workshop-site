@@ -2,10 +2,8 @@ import Image from "next/image";
 
 export default function AboutPage() {
   return (
-    <>
-      {/* ===================== */}
-      {/* Constrained content   */}
-      {/* ===================== */}
+    <div className="text-foreground">
+      {/* Constrained content */}
       <main className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -16,7 +14,7 @@ export default function AboutPage() {
         <section className="grid gap-10 lg:grid-cols-12 lg:items-start">
           {/* Left: text */}
           <div className="lg:col-span-7">
-            <div className="prose">
+            <div className="prose dark:prose-invert">
               <p>
                 531 Workshop builds custom furniture, shelving, and built-ins with a
                 focus on clean lines, durable materials, and a timeless finish.
@@ -61,14 +59,11 @@ export default function AboutPage() {
         </section>
 
         {/* Our Process */}
-        <section className="mt-16 prose">
+        <section className="mt-16 prose dark:prose-invert">
           <h2>Our Process</h2>
           <p>
-            We believe that great furniture starts with a deep understanding of your
-            needs and space. Our process begins with a consultation to discuss your
-            vision, requirements, and any specific design elements you have in mind.
-            From there, we create detailed designs and plans, ensuring every aspect is
-            tailored to your preferences.
+            We believe that great furniture starts with a deep understanding of your needs
+            and space...
           </p>
 
           <div className="relative aspect-video">
@@ -81,14 +76,18 @@ export default function AboutPage() {
               allowFullScreen
             />
           </div>
+
+          <p className="mt-6">
+            Watch the video to see our process in action—from initial consultation to
+            final installation.
+          </p>
         </section>
       </main>
-      {/* ===================== */}
-      {/* Full-width carousel   */}
-      {/* ===================== */}
-      <section className="mt-16 w-full bg-neutral-50 py-12">
+
+      {/* Full-width carousel (theme-safe) */}
+      <section className="mt-16 w-full py-12">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="prose">
+          <div className="prose dark:prose-invert">
             <h2>In the Workshop</h2>
             <p>Here is a look inside our workshop, where the magic happens.</p>
           </div>
@@ -100,7 +99,7 @@ export default function AboutPage() {
               "Working-pic-2.jpg",
               "Puzzle-table-rough-layout.webp",
               "Working-pic-3.jpg",
-              "Fireplace-rough-layout-2.webp",
+              "Fireplace-rough-layout-2.webp"
             ].map((img) => (
               <div
                 key={img}
@@ -119,6 +118,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
