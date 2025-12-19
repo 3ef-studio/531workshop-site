@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <div className="text-foreground">
       {/* Constrained content */}
-      <main className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+      <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             About

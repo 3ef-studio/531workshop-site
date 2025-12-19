@@ -85,7 +85,7 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-2">
-          <NavItem href="/gallery2">Gallery 2</NavItem>
+          <NavItem href="/gallery2">Custom Gallery</NavItem>
           <NavItem href="/shop">Shop</NavItem>
           <NavItem href="/about">About</NavItem>
           <NavItem href="/contact">Contact</NavItem>

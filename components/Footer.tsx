@@ -41,6 +41,9 @@ export default function Footer() {
               <Link href="/contact" className="hover:underline">
                 Contact
               </Link>
+              <Link href="/faq" className="hover:underline">
+                FAQ
+              </Link>
             </div>
 
             <div className="mt-6 text-xs text-center sm:text-left">

@@ -11,10 +11,10 @@ function getMosaicSpan(index: number): string {
 
 export default function Gallery2Page() {
   return (
-    <main className="mx-auto max-w-6xl p-6 sm:p-10">
+    <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Gallery Option 2
+          Gallery Option
         </h1>
         <p
           className="mt-2 text-sm"
