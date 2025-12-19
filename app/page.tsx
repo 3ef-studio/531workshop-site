@@ -37,7 +37,7 @@ export default function Home() {
             </p>
           </div>
 
-          <Link href="/gallery1" className="ui-link text-sm hidden sm:inline">
+          <Link href="/gallery2" className="ui-link text-sm hidden sm:inline">
             View full gallery →
           </Link>
         </div>
@@ -76,7 +76,7 @@ export default function Home() {
         </div>
 
         <div className="mt-6 sm:hidden">
-          <Link href="/gallery1" className="ui-btn ui-btn-secondary w-full text-center">
+          <Link href="/gallery2" className="ui-btn ui-btn-secondary w-full text-center">
             View full gallery
           </Link>
         </div>
