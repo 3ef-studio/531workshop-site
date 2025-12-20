@@ -63,8 +63,12 @@ export default function ContactForm() {
   const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const errors = useMemo(() => validate(values), [values]);
+  // NEW UI state
+  const [isSending, setIsSending] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const errors = useMemo(() => validate(values), [values]);
   const hasErrors = Object.keys(errors).length > 0;
 
   function onBlur(field: keyof FormState) {
@@ -82,24 +86,83 @@ export default function ContactForm() {
   function inputClass(field: keyof FormState) {
     const base =
       "mt-2 w-full rounded-2xl border bg-background px-4 py-3 text-sm outline-none transition";
-    const normal = "border-border focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background";
-    const bad = "border-red-500 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background";
+    const normal =
+      "border-border focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background";
+    const bad =
+      "border-red-500 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background";
     return `${base} ${showError(field) ? bad : normal}`;
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
+    setApiError(null);
+    setSuccessMsg(null);
 
-    // Design-review mode: validate + show errors, but do not send
     if (hasErrors) return;
 
-    // In Sprint “plumbing”, replace this with a POST to /api/contact
-    alert("Form looks good (submission disabled for now).");
+    try {
+      setIsSending(true);
+
+            const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      type ApiSuccess = { ok: true; message?: string };
+      type ApiFail = { ok: false; error?: string };
+      type ApiResponse = ApiSuccess | ApiFail;
+
+      let data: ApiResponse | null = null;
+      try {
+        data = (await res.json()) as ApiResponse;
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok || !data) {
+        setApiError("Something went wrong. Please try again.");
+        return;
+      }
+
+      if (!data.ok) {
+        setApiError(data.error || "Something went wrong. Please try again.");
+        return;
+      }
+
+      // Success: tell user to check email
+      setSuccessMsg(data.message ?? "Submitted. Please check your email to confirm.");
+
+
+      // Optional: clear form after successful submit
+      setValues({ firstName: "", lastName: "", email: "", phone: "", message: "" });
+      setTouched({});
+      setSubmitted(false);
+    } catch (err) {
+      console.error("Contact submit failed:", err);
+      setApiError("Network error. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {apiError ? (
+        <div className="ui-card p-4 border border-red-500/40">
+          <div className="text-sm font-medium text-red-600">Couldn’t send</div>
+          <div className="mt-1 text-sm text-muted-foreground">{apiError}</div>
+        </div>
+      ) : null}
+
+      {successMsg ? (
+        <div className="ui-card p-4 border border-border">
+          <div className="text-sm font-medium">Check your email</div>
+          <div className="mt-1 text-sm text-muted-foreground">{successMsg}</div>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <FieldLabel>First Name</FieldLabel>
@@ -171,13 +234,18 @@ export default function ContactForm() {
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <button
           type="submit"
+          disabled={isSending}
           className="px-5 py-3 rounded-2xl text-sm font-medium bg-accent text-accent-foreground hover:opacity-90 transition disabled:opacity-60"
         >
-          Send message
+          {isSending ? "Sending..." : "Send message"}
         </button>
 
         <span className="text-xs text-muted-foreground">
-          Submission disabled (design review). Validation is live.
+          {isSending
+            ? "Submitting your request…"
+            : successMsg
+            ? "Please confirm via the email link."
+            : "We’ll reply after you confirm via email."}
         </span>
       </div>
     </form>

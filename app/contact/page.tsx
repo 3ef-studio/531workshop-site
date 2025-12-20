@@ -1,6 +1,13 @@
 import ContactForm from "@/components/ContactForm";
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ confirmed?: string; error?: string }>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const confirmed = sp.confirmed === "1";
+  const error = sp.error;
   return (
     <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
       <header className="mb-10">
@@ -11,6 +18,25 @@ export default function ContactPage() {
           Tell us a bit about what you’d like to build. We’ll respond as soon as we can.
         </p>
       </header>
+       {confirmed ? (
+        <div className="mb-6 ui-card p-4 border border-border">
+          <div className="text-sm font-medium">Request confirmed ✅</div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Thanks — your request is confirmed and has been sent to 531 Workshop. We’ll be in touch soon.
+          </div>
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="mb-6 ui-card p-4 border border-red-500/40">
+          <div className="text-sm font-medium text-red-600">Confirmation issue</div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            {error === "expired"
+              ? "That confirmation link has expired. Please submit the form again."
+              : "That confirmation link is invalid. Please submit the form again."}
+          </div>
+        </div>
+      ) : null}
 
       <section className="grid gap-8 md:grid-cols-5">
         {/* Form */}
