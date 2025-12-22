@@ -1,38 +1,47 @@
-import Link from "next/link";
+import { getAllProducts } from "@/lib/products";
+import ProductCard from "@/components/ProductCard";
 
-export default function ShopPage() {
-  return (
-    <main className="mx-auto max-w-4xl px-6 py-16 text-center">
-      <h1 className="text-3xl font-semibold tracking-tight">
-        Shop
-      </h1>
+export const metadata = {
+  title: "Products • 531 Workshop",
+  description: "Products from 531 Workshop.",
+};
 
-      <p
-        className="mt-4 text-base"
-        style={{ color: "hsl(var(--muted-foreground))" }}
-      >
-        A curated selection of available pieces and made-to-order work.
-      </p>
+export default async function ProductsPage() {
+  const products = await getAllProducts();
 
-      <div className="mt-10 ui-card p-8">
-        <p className="text-sm">
-          The online shop is coming soon.
+  const ordered = [...products].sort((a, b) => {
+    // available first, then alpha by title
+    if (a.status !== b.status) return a.status === "available" ? -1 : 1;
+    return a.title.localeCompare(b.title);
+  });
+
+  if (!ordered.length) {
+    return (
+      <div className="py-12 px-6">
+        <h1 className="text-2xl font-semibold">Products</h1>
+        <p className="text-muted-foreground mt-2">
+          Nothing here yet—check back soon.
         </p>
-
-        <p
-          className="mt-3 text-sm"
-          style={{ color: "hsl(var(--muted-foreground))" }}
-        >
-          For now, please reach out to discuss availability, custom work,
-          or upcoming pieces.
-        </p>
-
-        <div className="mt-6">
-          <Link href="/contact" className="ui-btn ui-btn-primary">
-            Request a quote
-          </Link>
-        </div>
       </div>
-    </main>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold">Products</h1>
+        <p className="text-muted-foreground max-w-2xl">
+          Custom made products from 531 Workshop.
+        </p>
+      </header>
+
+      <section>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {ordered.map((p) => (
+            <ProductCard key={p.slug} product={p} />
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

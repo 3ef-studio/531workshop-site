@@ -1,0 +1,36 @@
+{
+  "products": [
+    {
+      "slug": "custom-dining-tables",
+      "title": "Custom Dining Tables",
+      "summary": "Made-to-order hardwood tables built to fit your space.",
+      "status": "made_to_order",
+      "price_display": "Made to order",
+      "badges": ["Dining", "Hardwood"],
+      "image_thumb": "/images/projects/Puzzle-Dining-Table.webp",
+      "image_hero": "/images/projects/Puzzle-Dining-Table.webp",
+      "cta_primary": { "label": "Request a quote", "url": "/contact" },
+      "features": [
+        "Choice of wood species and finish",
+        "Custom sizing and edge profiles",
+        "Delivery options available"
+      ]
+    },
+    {
+      "slug": "cutting-boards",
+      "title": "Custom Cutting Boards",
+      "summary": "Handcrafted cutting boards tailored to your kitchen.",
+      "status": "made_to_order",
+      "price_display": "Made to order",
+      "badges": ["Cutting Board", "Hardwood"],
+      "image_thumb": "/images/projects/Checkerboard-cutting-board.webp",
+      "image_hero": "/images/projects/Checkerboard-cutting-board.webp",
+      "cta_primary": { "label": "Request a quote", "url": "/contact" },
+      "features": [
+        "Choice of wood species and finish",
+        "Custom sizing and edge profiles",
+        "Ready to ship options available"
+      ]
+    }
+  ]
+}

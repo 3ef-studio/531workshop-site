@@ -51,6 +51,32 @@ const NavItem = ({
   </Link>
 );
 
+function CartButton({
+  onClick,
+  className = "",
+}: {
+  onClick?: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "px-3 py-2 rounded-xl text-md",
+        "text-muted-foreground border border-transparent",
+        "hover:text-foreground hover:bg-card/60 hover:border-[hsl(var(--accent))]",
+        "transition-[border-color] duration-150",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]",
+        className,
+      ].join(" ")}
+      aria-label="Open cart"
+    >
+      Cart
+    </button>
+  );
+}
+
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -85,6 +111,7 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-2">
+          <CartButton onClick={() => alert("Cart (Shopify integration coming soon)")} />
           <NavItem href="/shop">Shop</NavItem>
           <NavItem href="/gallery2">Custom Gallery</NavItem>
           <NavItem href="/about">About</NavItem>
@@ -107,6 +134,16 @@ export default function Header() {
       {open ? (
         <div className="sm:hidden border-t border-border bg-background/95 backdrop-blur">
           <nav className="mx-auto max-w-6xl px-6 py-3 flex flex-col gap-1">
+             <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                alert("Cart (Shopify integration coming soon)");
+              }}
+              className="px-3 py-2 rounded-xl text-sm hover:bg-card/60 text-left"
+            >
+              Cart
+            </button>
              <Link
               onClick={() => setOpen(false)}
               href="/shop"

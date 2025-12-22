@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Instagram, Facebook, Twitter } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -31,6 +32,7 @@ export default function Footer() {
               with care.
             </p>
 
+            {/* Page links */}
             <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-6">
               <Link href="/gallery2" className="hover:underline">
                 Gallery
@@ -46,8 +48,53 @@ export default function Footer() {
               </Link>
             </div>
 
-            <div className="mt-6 text-xs text-center sm:text-left">
-              © {new Date().getFullYear()} 531 Workshop. All rights reserved.
+            {/* Social icons */}
+            <div className="mt-6 flex justify-center sm:justify-start gap-4">
+              <a
+                href="https://www.instagram.com/531workshop/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="531 Workshop on Instagram"
+                className="hover:text-foreground transition"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://x.com/531workshop"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="531 Workshop on X"
+                className="hover:text-foreground transition"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.facebook.com/531Workshop"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="531 Workshop on Facebook"
+                className="hover:text-foreground transition"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+            </div>
+
+            {/* Copyright + dev credit */}
+            <div className="mt-6 text-xs text-center sm:text-left space-y-1">
+              <div>
+                © {new Date().getFullYear()} 531 Workshop. All rights reserved.
+              </div>
+              <div className="text-muted-foreground">
+                Built by{" "}
+                <a
+                  href="https://3ef.studio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  Three Eagles Forge Studio
+                </a>
+              </div>
             </div>
           </div>
         </div>

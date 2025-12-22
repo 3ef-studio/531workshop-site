@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Product } from "@/types/product";
 
 type Props = { product: Product };
@@ -12,46 +13,63 @@ export default function ProductCard({ product }: Props) {
     cta_primary,
     pricing,
     status,
+    image_thumb,
+    image_hero,
   } = product;
 
   const isRapid = pricing?.provider === "rapidapi";
   const tiers = pricing && "tiers" in pricing ? pricing.tiers ?? [] : [];
   const fromTier = tiers[0];
 
+  // Prefer thumb for grid; fall back to hero
+  const thumbSrc = image_thumb ?? image_hero;
+
   return (
-    <article
-      className="rounded-2xl bg-card shadow-soft border border-white/5 hover:border-white/10 transition p-5 h-full flex flex-col"
-      aria-live="polite"
-    >
+    <article className="ui-card group overflow-hidden p-5 h-full flex flex-col" aria-live="polite">
+      {/* Image */}
+      {thumbSrc ? (
+        <Link href={`/shop/${product.slug}`} className="block">
+          <div className="relative w-full aspect-4/3 overflow-hidden rounded-2xl border border-border">
+            <Image
+              src={thumbSrc}
+              alt={title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          </div>
+        </Link>
+      ) : null}
+
       {/* Badges */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+      <div className={`flex flex-wrap items-center gap-2 ${thumbSrc ? "mt-4" : "mb-3"}`}>
         {badges.map((b) => (
           <span
             key={b}
-            className="text-[11px] px-2 py-1 rounded-full bg-white/5 text-white/80"
+            className="text-[11px] px-2 py-1 rounded-full border border-border bg-card text-muted-foreground"
           >
             {b}
           </span>
         ))}
         {isRapid && (
-          <span className="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/60">
+          <span className="text-[11px] px-2 py-1 rounded-full border border-border bg-card text-muted-foreground">
             RapidAPI
           </span>
         )}
         {status === "coming-soon" && (
-          <span className="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/60">
+          <span className="text-[11px] px-2 py-1 rounded-full border border-border bg-card text-muted-foreground">
             Coming Soon
           </span>
         )}
       </div>
 
       {/* Title & summary */}
-     <h3 className="text-xl font-semibold">
-        <Link href={`/products/${product.slug}`} className="hover:underline underline-offset-2">
-            {title}
+      <h3 className="mt-3 text-lg font-semibold">
+        <Link href={`/shop/${product.slug}`} className="hover:underline underline-offset-2">
+          {title}
         </Link>
       </h3>
-      <p className="text-muted-foreground mt-2">{summary}</p>
+      <p className="text-muted-foreground mt-2 text-sm">{summary}</p>
 
       {/* Price / tiers */}
       <div className="mt-4 text-sm">
@@ -69,9 +87,7 @@ export default function ProductCard({ product }: Props) {
                   {t.name}
                   {t.rate_limit ? ` · ${t.rate_limit}` : ""}
                 </span>
-                {typeof t.price_month === "number" && (
-                  <span>${t.price_month}/mo</span>
-                )}
+                {typeof t.price_month === "number" ? <span>${t.price_month}/mo</span> : null}
               </li>
             ))}
           </ul>
@@ -80,14 +96,14 @@ export default function ProductCard({ product }: Props) {
 
       {/* CTA */}
       <div className="mt-5 pt-1">
-        {cta_primary && (
+        {cta_primary ? (
           <Link
             href={cta_primary.url}
-            className="inline-flex items-center rounded-xl px-4 py-2 bg-accent text-black font-medium"
+            className="inline-flex items-center rounded-xl px-4 py-2 bg-accent text-accent-foreground font-medium hover:opacity-90 transition"
           >
             {cta_primary.label}
           </Link>
-        )}
+        ) : null}
       </div>
     </article>
   );
