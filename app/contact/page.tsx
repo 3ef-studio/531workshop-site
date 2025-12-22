@@ -77,7 +77,6 @@ export default async function ContactPage({
               <li>What you’re looking to build</li>
               <li>Rough dimensions (if known)</li>
               <li>Timeline (if any)</li>
-              <li>Photos or inspiration links (optional)</li>
             </ul>
           </div>
         </aside>
