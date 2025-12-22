@@ -15,6 +15,8 @@ export type Product = {
   title: string;
   summary: string;
   status: "available" | "coming-soon";
+  image_thumb?: string;
+  image_hero?: string;
   price_display?: string;
   badges?: string[];
   cta_primary?: { label: string; url: string };
