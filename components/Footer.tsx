@@ -87,7 +87,7 @@ export default function Footer() {
               <div className="text-muted-foreground">
                 Built by{" "}
                 <a
-                  href="https://3ef.studio"
+                  href="https://3ef.studio/consulting"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"
