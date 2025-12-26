@@ -17,6 +17,18 @@
       ]
     },
     {
+      "slug": "Shopify-test",
+      "title": "End-Grain Cutting Board",
+      "summary": "Ready-to-ship end-grain board in maple/walnut.",
+      "status": "available",
+      "shopify_product_id": "9078262071515",
+      "price_display": "$10",
+      "badges": ["Ready to Ship", "Cutting Board"],
+      "cta_primary": { "label": "Product Details", "url": "/shop/Shopify-test" },
+      "image_thumb": "/images/projects/Checkerboard-cutting-board.webp",
+      "image_hero": "/images/projects/Checkerboard-cutting-board.webp"
+    },
+    {
       "slug": "cutting-boards",
       "title": "Custom Cutting Boards",
       "summary": "Handcrafted cutting boards tailored to your kitchen.",

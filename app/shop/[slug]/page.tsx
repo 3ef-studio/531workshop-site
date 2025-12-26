@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getProductBySlug } from "@/lib/products";
 import Link from "next/link";
 import Image from "next/image";
+import ShopifyProductBuyButton from "@/components/shopify/ShopifyProductBuyButton";
 
 type Params = { slug: string };
 type PageProps = { params: Promise<Params> }; // params is a Promise
@@ -41,14 +42,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
     pricing,
     features,
     status,
+    shopify_product_id,
     image_hero,
     image_thumb,
-  } = product;
+  } = product as typeof product & { shopify_product_id?: string };
 
   const heroSrc = image_hero ?? image_thumb;
 
   const isRapid = pricing?.provider === "rapidapi";
   const tiers = isRapid && "tiers" in (pricing ?? {}) ? pricing?.tiers ?? [] : [];
+
+  const isPurchasable =
+    status === "available" &&
+    typeof shopify_product_id === "string" &&
+    shopify_product_id.length > 0;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16 space-y-8">
@@ -110,13 +117,28 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </div>
         ) : null}
 
-        {cta_primary && status !== "coming-soon" ? (
-          <Link
-            href={cta_primary.url}
-            className="inline-flex items-center rounded-xl px-4 py-2 bg-accent text-accent-foreground font-medium"
-          >
-            {cta_primary.label}
-          </Link>
+        {/* PDP CTA area:
+            - Purchasable (available + shopify_product_id): show Shopify add-to-cart + qty
+            - Otherwise (and not coming-soon): show cta_primary (e.g., Request a quote)
+        */}
+        {status !== "coming-soon" ? (
+          isPurchasable ? (
+            <div className="pt-2">
+              <ShopifyProductBuyButton
+                productId={shopify_product_id!}
+                buttonText="Add to cart"
+                checkoutText="Checkout"
+                borderRadiusPx={10}
+              />
+            </div>
+          ) : cta_primary ? (
+            <Link
+              href={cta_primary.url}
+              className="inline-flex items-center rounded-xl px-4 py-2 bg-accent text-accent-foreground font-medium"
+            >
+              {cta_primary.label}
+            </Link>
+          ) : null
         ) : null}
       </header>
 
