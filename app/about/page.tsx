@@ -34,7 +34,7 @@ export default function AboutPage() {
               <p>If you have a project in mind, we’d love to hear about it.</p>
 
               <p>
-                531 Workshop is based in the Chicagoland area and works with clients
+                531 Workshop is based in Villa Park, Illinois and works with clients
                 locally on projects that require design, build, and installation.
               </p>
             </div>

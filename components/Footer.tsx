@@ -29,7 +29,7 @@ export default function Footer() {
           <div className="sm:col-span-8">
             <p className="max-w-prose text-center sm:text-left">
               Custom woodworking, built-ins, and furniture — designed and crafted
-              with care.
+              with care. Based in the Chicagoland area.
             </p>
 
             {/* Page links */}
