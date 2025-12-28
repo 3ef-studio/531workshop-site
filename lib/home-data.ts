@@ -60,21 +60,33 @@ export const FEATURED_ITEMS: FeaturedItem[] = [
 export const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "The piece fits the space perfectly—beautiful craftsmanship and a smooth process from start to finish.",
-    name: "Paul G.",
+      "Dave is conscientious and offers very fair pricing on his custom projects. We have used him several times to fulfill our customers' dreams of projects they desire.",
+    name: "Yankee Fist",
     location: "Lombard, IL",
+  },
+   {
+    quote:
+      "Dave was fantastic with my small cabinet design. He followed my dimensions to the letter and went above and beyond. WAY nicer than expected. Highly recommend.",
+    name: "DaveP603",
+    location: "Villa Park, IL",
   },
   {
     quote:
-      "Amazing craftsmanship and attention to detail. Couldn't be happier with the result!",
+      "Did an excellent job for 2 different projects for our family.  One was a new custom fireplace mantle and the other was an outdoor furniture build.  Craftsmanship and quality was outstanding.",
     name: "Basil W.",
     location: "Villa Park, IL",
   },
   {
     quote:
-      "Great communication, great work, and the final result exceeded expectations.",
-    name: "Rich C.",
-    location: "Villa Park, IL",
+      "Dave created a custom cutting board for an engagement present and had great communication throughout the process. The overall product looked well put together and included a laser inscription exactly how I had requested.",
+    name: "Andrew X",
+    location: "Elmhurst, IL",
+  },
+  {
+    quote:
+      "Dave does great work.  He can make custom items to fit your needs.  His work is of high quality and his fees are reasonable.   We are very happy with his products.",
+    name: "Nick C",
+    location: "Lombard, IL",
   },
 ];
 

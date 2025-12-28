@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import Hero from "@/components/Hero";
 import { VALUE_PROPS, FEATURED_ITEMS, TESTIMONIALS, TESTIMONIAL_META } from "@/lib/home-data";
+import TestimonialsCarousel from "@/components/TestimonialsCarousel";
+
 
 export default function Home() {
   return (
@@ -111,21 +113,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-3">
-          {TESTIMONIALS.slice(0, 3).map((t, idx) => (
-            <div key={idx} className="ui-card p-6">
-              <p className="text-sm leading-6">“{t.quote}”</p>
-              <div className="mt-4 text-sm font-medium">
-                {t.name}
-                {t.location ? (
-                  <span className="font-normal" style={{ color: "hsl(var(--muted-foreground))" }}>
-                    {" "}
-                    • {t.location}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          ))}
+        <div className="mt-6">
+          <TestimonialsCarousel items={TESTIMONIALS} />
         </div>
 
         <div className="mt-8">
