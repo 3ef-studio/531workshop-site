@@ -38,32 +38,26 @@ export default function Hero() {
             <div className="w-full p-4 sm:p-10">
               <div className="max-w-2xl">
                 <p className="text-xs tracking-wide uppercase text-white/80">
-                  Custom woodworking
+                  Hardwood Cutting Boards
                 </p>
 
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  Made to fit your space.
+                  Crafted for you and your home.
                 </h1>
 
                 <p className="mt-3 text-sm leading-6 text-white/80 sm:text-base sm:leading-7">
-                  Furniture, shelving, and built-ins—designed, built, and finished with care.
+                  Handmade, food safe finishes - elevate your home.
                 </p>
 
                 {/* CTAs: stack on mobile so both are visible */}
                 <div className="mt-5 grid gap-3 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
                   <Link
-                    href="/contact"
+                    href="/shop"
                     className="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-medium bg-white text-black hover:opacity-90 transition text-center"
                   >
-                    Request a quote
+                    Shop
                   </Link>
 
-                  <Link
-                    href="/gallery1"
-                    className="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-medium border border-white/45 text-white hover:bg-white/10 transition text-center"
-                  >
-                    View gallery
-                  </Link>
                 </div>
               </div>
             </div>

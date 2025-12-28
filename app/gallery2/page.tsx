@@ -14,13 +14,13 @@ export default function Gallery2Page() {
     <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Gallery Option
+          Gallery
         </h1>
         <p
           className="mt-2 text-sm"
           style={{ color: "hsl(var(--muted-foreground))" }}
         >
-          Mosaic grid (dynamic layout).
+          Here are some samples of our work.
         </p>
       </header>
 

@@ -19,9 +19,11 @@ export default async function ProductsPage() {
     return (
       <div className="py-12 px-6">
         <h1 className="text-2xl font-semibold">Products</h1>
-        <p className="text-muted-foreground mt-2">
-          Nothing here yet—check back soon.
-        </p>
+        <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
+          <p className="text-muted-foreground mt-2">
+            Nothing here yet—check back soon.
+          </p>
+        </div>
       </div>
     );
   }
@@ -30,11 +32,12 @@ export default async function ProductsPage() {
     <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">Products</h1>
-        <p className="text-muted-foreground max-w-2xl">
-          Custom made products from 531 Workshop.
-        </p>
+        <div className="mt-4 space-y-3">
+          <p className="text-muted-foreground max-w-2xl">
+            Custom made products from 531 Workshop.
+          </p>
+        </div>
       </header>
-
       <section>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {ordered.map((p) => (
