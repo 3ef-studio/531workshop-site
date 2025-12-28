@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Instagram, Facebook, Twitter } from "lucide-react";
+import { Instagram, Facebook} from "lucide-react";
+import { FaTiktok } from "react-icons/fa";
 
 export default function Footer() {
   return (
@@ -60,15 +61,6 @@ export default function Footer() {
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="https://x.com/531workshop"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="531 Workshop on X"
-                className="hover:text-foreground transition"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
                 href="https://www.facebook.com/531Workshop"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -76,6 +68,15 @@ export default function Footer() {
                 className="hover:text-foreground transition"
               >
                 <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.tiktok.com/@531Workshop"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="531 Workshop on TikTok"
+                className="hover:text-foreground transition"
+              >
+                <FaTiktok className="h-5 w-5" />
               </a>
             </div>
 
