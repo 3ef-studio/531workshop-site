@@ -14,7 +14,7 @@ export const faqItems: FaqItem[] = [
   {
     question: "How much do you charge for shipping?",
     answer:
-      "Shipping costs are automatically calculated for each order based on the size and weight of the items within your order. You will receive a package tracking number upon shipment",
+      "Shipping costs are automatically calculated for each order based on the size and weight of the items within your order. You will receive a package tracking number upon shipment.",
   },
   {
     question: "What is your return policy?",
@@ -24,7 +24,7 @@ export const faqItems: FaqItem[] = [
   {
     question: "Do you offer laser engraving?",
     answer:
-      "Yes! Most of our items can be laser engraved with the message of your choice. Names, dates, company logos, you name it! Please reach out to us for more information about laser engraving including design and ordering options",
+      "Yes! Most of our items can be laser engraved with the message of your choice. Names, dates, company logos, you name it! Please reach out to us for more information about laser engraving including design and ordering options.",
   },
   {
     question: "Do you take custom orders?",
