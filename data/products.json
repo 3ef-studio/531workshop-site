@@ -1,22 +1,6 @@
 {
   "products": [
     {
-      "slug": "custom-dining-tables",
-      "title": "Custom Dining Tables",
-      "summary": "Made-to-order hardwood tables built to fit your space.",
-      "status": "made_to_order",
-      "price_display": "Made to order",
-      "badges": ["Dining", "Hardwood"],
-      "image_thumb": "/images/projects/Puzzle-Dining-Table.webp",
-      "image_hero": "/images/projects/Puzzle-Dining-Table.webp",
-      "cta_primary": { "label": "Request a quote", "url": "/contact" },
-      "features": [
-        "Choice of wood species and finish",
-        "Custom sizing and edge profiles",
-        "Delivery options available"
-      ]
-    },
-    {
       "slug": "Shopify-test",
       "title": "End-Grain Cutting Board",
       "summary": "Ready-to-ship end-grain board in maple/walnut.",
@@ -27,6 +11,144 @@
       "cta_primary": { "label": "Product Details", "url": "/shop/Shopify-test" },
       "image_thumb": "/images/projects/Checkerboard-cutting-board.webp",
       "image_hero": "/images/projects/Checkerboard-cutting-board.webp"
+    },
+    {
+      "slug": "small-board",
+      "title": "Small Cutting Board",
+      "summary": "8” x 12” x ¾” thick cutting board",
+      "status": "available",
+      "price_display": "$45",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Custom-Woodworking-Project.webp",
+      "image_hero": "/images/projects/Custom-Woodworking-Project.webp",
+      "cta_primary": { "label": "Get a quote", "url": "/contact" },
+      "features": [
+        "8” x 12” x ¾” thick",
+        "Materials: Walnut, Maple, Cherry, Mahogany",
+        "Expert craftsmanship"
+      ]
+    },
+    {
+      "slug": "small-board-fingerhold",
+      "title": "Small Cutting Board with Fingerhold",
+      "summary": "8” x 12” x ¾” thick cutting board with fingerhold",
+      "status": "available",
+      "price_display": "$45",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Small-Cutting-Board-Fingerhold.webp",
+      "image_hero": "/images/projects/Small-Cutting-Board-Fingerhold.webp",
+      "cta_primary": { "label": "Get a quote", "url": "/contact" },
+      "features": [
+        "8” x 12” x ¾” thick",
+        "Materials: Walnut, Maple, Cherry, Mahogany",
+        "Expert craftsmanship"
+      ]
+    },  
+    {
+      "slug": "large-board-round-handle",
+      "title": "Large Cutting Board with Round Handle",
+      "summary": "11 ¾” x 18” x 1” thick cutting board with round handle",
+      "status": "available",
+      "price_display": "$100",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Large-Cutting-Board-Round-Handle.webp",
+      "image_hero": "/images/projects/Large-Cutting-Board-Round-Handle.webp",
+      "cta_primary": { "label": "Get a quote", "url": "/contact" },
+      "features": [
+        "11 ¾” x 18” x 1” thick",
+        "Materials: Walnut, Maple, Cherry, Mahogany",
+        "Expert craftsmanship"
+      ]
+    },
+    {
+      "slug": "large-board-juice-groove",
+      "title": "Large Cutting Board with Juice Groove",
+      "summary": "12” x 18” x 1” thick cutting board with juice groove",
+      "status": "available",
+      "price_display": "$100",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Large-Cutting-Board-Juice-Groove.webp",
+      "image_hero": "/images/projects/Large-Cutting-Board-Juice-Groove.webp",
+      "cta_primary": { "label": "Get a quote", "url": "/contact" },
+      "features": [
+        "12” x 18” x 1” thick",
+        "Materials: Walnut, Maple, Cherry, Mahogany",
+        "Expert craftsmanship"
+      ]
+    },
+    {
+      "slug": "large-endgrain-board",
+      "title": "Large End-Grain Cutting Board",
+      "summary": "12” x 18” x 1 ½” thick end-grain cutting board",
+      "status": "available",
+      "shopify_product_id": "9086509908187",
+      "price_display": "$150",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Large-Endgrain-Cutting-Board.webp",
+      "image_hero": "/images/projects/Large-Endgrain-Cutting-Board.webp",
+      "cta_primary": { "label": "Product Details", "url": "/shop/large-endgrain-board" },
+      "features": [
+        "12” x 18” x 1 ½” thick",
+        "Materials: Walnut, Maple, Cherry",
+        "Expert craftsmanship"
+      ],
+      "variants": {
+        "label": "Material",
+        "options": ["Maple", "Cherry", "Walnut"]
+      }   
+    },
+    {
+      "slug": "large-endgrain-juice-groove",
+      "title": "Large End-Grain Cutting Board with Juice Groove",
+      "summary": "12” x 18” x 1 ½” thick end-grain cutting board with juice groove",
+      "status": "available",
+      "price_display": "$160",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Large-Endgrain-Cutting-Board-Juice-Groove.webp",
+      "image_hero": "/images/projects/Large-Endgrain-Cutting-Board-Juice-Groove.webp",
+      "cta_primary": { "label": "Get a quote", "url": "/contact" },
+      "features": [
+        "12” x 18” x 1 ½” thick",
+        "Materials: Walnut, Maple, Cherry",
+        "Expert craftsmanship"
+      ],
+      "variants": {
+        "label": "Material",
+        "options": ["Maple", "Cherry", "Walnut"]
+      }  
+    },
+    {
+      "slug": "large-board",
+      "title": "Large Cutting Board",
+      "summary": "12” x 18” x 1” thick cutting board",
+      "status": "available",
+      "price_display": "$95",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Large-Cutting-Board.webp",
+      "image_hero": "/images/projects/Large-Cutting-Board.webp",
+      "cta_primary": { "label": "Get a quote", "url": "/contact" },
+      "features": [
+        "12” x 18” x 1” thick",
+        "Materials: Walnut, Maple, Cherry, Mahogany",
+        "Expert craftsmanship"
+      ]
+    },
+    {
+      "slug": "large-board-fingerhold",
+      "title": "Large Cutting Board with Fingerhold",
+      "summary": "12” x 18” x 1” thick cutting board with fingerhold",
+      "status": "available",
+      "price_display": "$95",
+      "badges": ["Custom", "Woodworking"],
+      "image_thumb": "/images/projects/Large-Cutting-Board-Fingerhold.webp",
+      "image_hero": "/images/projects/Large-Cutting-Board-Fingerhold.webp",
+      "cta_primary": { "label": "Get a quote", "url": "/contact" },
+      "features": [
+        "12” x 18” x 1” thick",
+        "Materials: Walnut, Maple, Cherry, Mahogany",
+        "Expert craftsmanship"
+      ]
     }
   ]
 }
+

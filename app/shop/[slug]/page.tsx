@@ -8,6 +8,22 @@ import ShopifyProductBuyButton from "@/components/shopify/ShopifyProductBuyButto
 type Params = { slug: string };
 type PageProps = { params: Promise<Params> }; // params is a Promise
 
+type VariantConfig =
+  | {
+      label?: string;
+      options?: unknown[];
+    }
+  | undefined;
+
+function hasVariants(variants: VariantConfig): boolean {
+  if (!variants) return false;
+  if (typeof variants !== "object" || variants === null) return false;
+  if (!("options" in variants)) return false;
+
+  const options = (variants as { options?: unknown[] }).options;
+  return Array.isArray(options) && options.length > 0;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
@@ -45,7 +61,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
     shopify_product_id,
     image_hero,
     image_thumb,
-  } = product as typeof product & { shopify_product_id?: string };
+    variants,
+  } = product as typeof product & {
+    shopify_product_id?: string;
+    variants?: VariantConfig;
+  };
 
   const heroSrc = image_hero ?? image_thumb;
 
@@ -56,6 +76,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     status === "available" &&
     typeof shopify_product_id === "string" &&
     shopify_product_id.length > 0;
+
+  const showOptions = hasVariants(variants);
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16 space-y-8">
@@ -103,6 +125,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
               Coming Soon
             </span>
           )}
+          {showOptions && (
+            <span className="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/60">
+              Select options
+            </span>
+          )}
         </div>
 
         <h1 className="text-3xl font-semibold">{title}</h1>
@@ -129,6 +156,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 buttonText="Add to cart"
                 checkoutText="Checkout"
                 borderRadiusPx={10}
+                showOptions={showOptions}
               />
             </div>
           ) : cta_primary ? (

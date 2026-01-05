@@ -85,6 +85,12 @@ type Props = {
 
   /** Roundness used for Shopify widget buttons */
   borderRadiusPx?: number;
+
+  /**
+   * Whether to show variant options (e.g., Material dropdown) when product has variants.
+   * Defaults to true. If the product has no variants, Shopify simply won't render options.
+   */
+  showOptions?: boolean;
 };
 
 export default function ShopifyProductBuyButton({
@@ -93,6 +99,7 @@ export default function ShopifyProductBuyButton({
   buttonText = "Add to cart",
   checkoutText = "Checkout",
   borderRadiusPx = 10,
+  showOptions = true,
 }: Props) {
   const reactId = useId();
   // useId can include ":" in React 18; sanitize for valid DOM id
@@ -103,6 +110,7 @@ export default function ShopifyProductBuyButton({
 
     async function init() {
       const domain = process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN;
+      // NOTE: Keep token env name consistent with your existing implementation
       const token = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN;
 
       if (!domain || !token) {
@@ -182,6 +190,8 @@ export default function ShopifyProductBuyButton({
                 price: false,
                 button: false,
                 buttonWithQuantity: true,
+                // ✅ IMPORTANT: allows Shopify to render option selectors (variant dropdowns)
+                options: showOptions,
               },
               text: {
                 button: buttonText,
@@ -200,6 +210,8 @@ export default function ShopifyProductBuyButton({
                 imgWithCarousel: true,
                 button: false,
                 buttonWithQuantity: true,
+                // keep options consistent in modal too
+                options: showOptions,
               },
               styles: {
                 button: themedButtonStyles,
@@ -254,8 +266,19 @@ export default function ShopifyProductBuyButton({
 
     return () => {
       cancelled = true;
+      // Optional cleanup: clear widget markup on unmount to avoid flashes on route back
+      const node = document.getElementById(nodeId);
+      if (node) node.innerHTML = "";
     };
-  }, [productId, width, buttonText, checkoutText, borderRadiusPx, nodeId]);
+  }, [
+    productId,
+    width,
+    buttonText,
+    checkoutText,
+    borderRadiusPx,
+    showOptions,
+    nodeId,
+  ]);
 
   return <div id={nodeId} />;
 }

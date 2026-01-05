@@ -37,7 +37,7 @@ export default function FaqPage() {
               </span>
             </summary>
 
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">
               {item.answer}
             </p>
           </details>

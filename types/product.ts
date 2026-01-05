@@ -14,7 +14,8 @@ export type Product = {
   slug: string;
   title: string;
   summary: string;
-  status: "available" | "coming-soon";
+  status: "available" | "coming-soon" | "made_to_order";
+  shopify_product_id?: string;
   image_thumb?: string;
   image_hero?: string;
   price_display?: string;
