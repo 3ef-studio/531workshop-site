@@ -99,7 +99,8 @@ export default function AboutPage() {
               "Working-pic-2.jpg",
               "Puzzle-table-rough-layout.webp",
               "Working-pic-3.jpg",
-              "Fireplace-rough-layout-2.webp"
+              "Fireplace-rough-layout-2.webp",
+              "DSC01540.webp"
             ].map((img) => (
               <div
                 key={img}
