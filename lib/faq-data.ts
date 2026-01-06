@@ -57,14 +57,9 @@ export const faqItems: FaqItem[] = [
       "Maple is fairly prone to staining from berries, beets, etc. Walnut is much less so. A good coat of one of the finishing oils greatly inhibits stains from occurring. But if stains happen, don’t panic! They will dissipate over time. Lemon juice and kosher salt may also help to remove stains. Do not use hydrogen peroxide, baking soda, or bleach on your board, especially on Maple! Chemicals such as those often discolor the butcher block far worse than the original stain.",
   },
   {
-    question: "What’s your typical lead time?",
+    question: "What’s your typical lead time for custom projects?",
     answer:
       "Lead times vary depending on project complexity and current workload. Once we review your request, we’ll provide an estimated timeline.",
-  },
-  {
-    question: "What woods do you work with?",
-    answer:
-      "We commonly work with hardwoods such as oak, maple, walnut, and cherry, as well as select softwoods depending on the project and finish requirements.",
   },
   {
     question: "Can you match a specific style or reference photo?",
@@ -75,11 +70,6 @@ export const faqItems: FaqItem[] = [
     question: "Do you deliver or ship finished pieces?",
     answer:
       "Local delivery may be available depending on size and location. Shipping can be arranged for smaller items. Logistics and costs are confirmed on a case-by-case basis.",
-  },
-  {
-    question: "How much do you charge for shipping?",
-    answer:
-      "Shipping costs are automatically calculated for each order based on the size and weight of the items within your order. You will receive a package tracking number upon shipment",
   },
   {
     question: "How do you price custom work?",
