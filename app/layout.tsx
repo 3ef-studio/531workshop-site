@@ -24,17 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <head>
-        {/* Project-specific Plausible script (uses your site ID; no data-domain needed) */}
-        <Script src="https://plausible.io/js/pa-g6qES0IdXJQN8_5hlCfQc.js" defer />
-
-        {/* Init snippet must be inline – use next/script */}
-        <Script id="plausible-init" strategy="afterInteractive">
-          {`
-            window.plausible = window.plausible || function(){ (plausible.q = plausible.q || []).push(arguments) };
-            plausible.init = plausible.init || function(opts){ plausible.o = opts || {} };
-            plausible.init();
-          `}
-        </Script>
+        
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}>
         <Header />
