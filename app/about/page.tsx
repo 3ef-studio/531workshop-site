@@ -66,20 +66,19 @@ export default function AboutPage() {
             and space...
           </p>
 
-          <div className="relative aspect-video">
+          <div className="relative aspect-video overflow-hidden rounded-lg">
             <iframe
               className="absolute inset-0 h-full w-full"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              title="Our Process Video"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              src="https://www.youtube-nocookie.com/embed/R8_fj2ljYIM?rel=0&modestbranding=1"
+              title="531 Workshop Overview"
+              loading="lazy"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
           </div>
 
           <p className="mt-6">
-            Watch the video to see our process in action—from initial consultation to
-            final installation.
+            Watch the video to see our Workshop in action
           </p>
         </section>
       </main>

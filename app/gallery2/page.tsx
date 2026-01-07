@@ -39,6 +39,17 @@ export default function Gallery2Page() {
           </div>
         ))}
       </section>
+
+      <div className="relative aspect-video overflow-hidden rounded-lg">
+            <iframe
+              className="absolute inset-0 h-full w-full"
+              src="https://www.youtube-nocookie.com/embed/wQ63sQTePeE?rel=0&modestbranding=1"
+              title="531 Workshop"
+              loading="lazy"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
     </main>
   );
 }
