@@ -102,7 +102,9 @@ export default function AboutPage() {
               "Working-pic-3.jpg",
               "DSC01524.webp",
               "Fireplace-rough-layout-2.webp",
-              "DSC01489.webp"
+              "DSC01489.webp",
+              "DSC01503.webp",
+              "DSC01534.webp"
             ].map((img) => (
               <div
                 key={img}
