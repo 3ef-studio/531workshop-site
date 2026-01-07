@@ -8,7 +8,7 @@ export default function Hero() {
       <div className="overflow-hidden sm:ui-card">
         <div className="relative w-full aspect-9/14 sm:aspect-3/2">
           <Image
-            src="/images/projects/DSC01540.webp"
+            src="/images/projects/DSC01481.webp"
             alt="Custom woodworking project by 531 Workshop"
             fill
             priority

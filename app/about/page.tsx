@@ -46,7 +46,7 @@ export default function AboutPage() {
               <div className="ui-card overflow-hidden">
                 <div className="relative aspect-4/5">
                   <Image
-                    src="/images/projects/Profile-pic-1.webp"
+                    src="/images/projects/DSC01558.webp"
                     alt="Workshop in progress"
                     fill
                     className="object-cover"
@@ -97,10 +97,12 @@ export default function AboutPage() {
           <div className="flex gap-6 overflow-x-auto px-6 lg:px-12 pb-4">
             {[
               "Working-pic-2.jpg",
+              "DSC01430.webp",
               "Puzzle-table-rough-layout.webp",
               "Working-pic-3.jpg",
+              "DSC01524.webp",
               "Fireplace-rough-layout-2.webp",
-              "DSC01540.webp"
+              "DSC01489.webp"
             ].map((img) => (
               <div
                 key={img}
