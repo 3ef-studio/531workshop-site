@@ -15,7 +15,7 @@ export default async function ContactPage({
           Contact
         </h1>
         <p className="mt-4 max-w-prose text-base text-muted-foreground">
-          Tell us a bit about what you’d like to build. We’ll respond as soon as we can.
+          Tell us a bit about what you’d like to build. We’ll respond within 1-2 business days.
         </p>
       </header>
        {confirmed ? (
@@ -58,9 +58,9 @@ export default async function ContactPage({
           </div>
 
           <div className="ui-card p-6">
-            <h2 className="text-sm font-semibold">Phone (optional)</h2>
+            <h2 className="text-sm font-semibold">Phone</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Add a phone number if you’d like a call back.
+              (630) 638-5504
             </p>
           </div>
 

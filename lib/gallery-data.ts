@@ -68,12 +68,6 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     title: "Bookshelf Unit",
   },
   {
-    id: "p05",
-    src: "/images/projects/C-Table.webp",
-    alt: "C Table",
-    title: "C Table",
-  },
-  {
     id: "p06",
     src: "/images/projects/Checkerboard-cutting-board.webp",
     alt: "Checkerboard cutting board",

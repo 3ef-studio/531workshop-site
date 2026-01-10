@@ -12,9 +12,9 @@ export default function Home() {
 
       {/* Value Props */}
       <section className="mt-10">
-        <h2 className="text-xl font-semibold tracking-tight">What we build for</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Custom Projects</h2>
         <p className="mt-2 text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-          Simple, durable work—designed to fit your space and your style.
+          Hardwood furniture - designed just for you. Built to last a lifetime.
         </p>
 
         <div className="mt-6 grid gap-6 md:grid-cols-3">
@@ -28,7 +28,11 @@ export default function Home() {
           ))}
         </div>
       </section>
-
+          <div className="mt-8">
+          <Link href="/contact" className="ui-btn ui-btn-primary w-full sm:w-auto text-center">
+            Request a quote
+          </Link>
+        </div>
       {/* Featured */}
       <section className="mt-12">
         <div className="flex items-end justify-between gap-6">
@@ -117,11 +121,7 @@ export default function Home() {
           <TestimonialsCarousel items={TESTIMONIALS} />
         </div>
 
-        <div className="mt-8">
-          <Link href="/contact" className="ui-btn ui-btn-primary w-full sm:w-auto text-center">
-            Request a quote
-          </Link>
-        </div>
+        
       </section>
     </main>
   );

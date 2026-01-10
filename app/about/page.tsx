@@ -16,8 +16,7 @@ export default function AboutPage() {
           <div className="lg:col-span-7">
             <div className="prose dark:prose-invert">
               <p>
-                531 Workshop builds custom furniture, shelving, and built-ins with a
-                focus on clean lines, durable materials, and a timeless finish.
+                531 Workshop builds custom furniture and shelving designed and crafted just for you, built  to last a lifetime.
               </p>
 
               <p>
@@ -26,7 +25,7 @@ export default function AboutPage() {
               </p>
 
               <ul>
-                <li>Custom furniture & built-ins</li>
+                <li>Custom furniture</li>
                 <li>Material + finish guidance</li>
                 <li>Made to fit your space</li>
               </ul>
@@ -34,7 +33,7 @@ export default function AboutPage() {
               <p>If you have a project in mind, we’d love to hear about it.</p>
 
               <p>
-                531 Workshop is based in Villa Park, Illinois and works with clients
+                531 Workshop is based in Lombard, Illinois and works with clients
                 locally on projects that require design, build, and installation.
               </p>
             </div>

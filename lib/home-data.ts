@@ -24,12 +24,12 @@ export const VALUE_PROPS: ValueProp[] = [
   {
     title: "Craftsmanship first",
     description:
-      "Clean, durable builds with attention to the details that matter—fit, finish, and longevity.",
+      "Attention to the details that matter—fit, finish, and longevity.",
   },
   {
     title: "Designed for your space",
     description:
-      "Custom furniture, shelving, and built-ins that feel intentional and look at home.",
+      "Custom furniture and shelving that feels intentional and looks at home.",
   },
   {
     title: "Straightforward process",
@@ -41,20 +41,21 @@ export const VALUE_PROPS: ValueProp[] = [
 export const FEATURED_ITEMS: FeaturedItem[] = [
   {
     id: "feat-1",
-    title: "Checkerboard Cutting Board",
-    description: "A beautiful checkerboard pattern with a durable finish.",
-    imageSrc: "/images/projects/Checkerboard-cutting-board.webp",
-    href: "/shop/Shopify-test",
-    tag: "Featured",
-  },
-  {
-    id: "feat-2",
     title: "Live Edge Coffee Table",
     description: "Natural edge detail with a durable topcoat.",
     imageSrc: "/images/projects/Live-Edge-Coffee-Table.webp",
     href: "/gallery2",
     tag: "New",
   },
+  {
+    id: "feat-2",
+    title: "Checkerboard Cutting Board",
+    description: "A beautiful checkerboard pattern with a durable finish.",
+    imageSrc: "/images/projects/Checkerboard-cutting-board.webp",
+    href: "/shop/Shopify-test",
+    tag: "Featured",
+  },
+  
 ];
 
 export const TESTIMONIALS: Testimonial[] = [

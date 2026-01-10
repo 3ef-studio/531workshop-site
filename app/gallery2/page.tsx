@@ -20,7 +20,7 @@ export default function Gallery2Page() {
           className="mt-2 text-sm"
           style={{ color: "hsl(var(--muted-foreground))" }}
         >
-          Here are some samples of our work.
+          Custom hardwood furniture crafted for you and your home.
         </p>
       </header>
 

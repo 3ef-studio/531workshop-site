@@ -46,7 +46,7 @@ export default function Hero() {
                 </h1>
 
                 <p className="mt-3 text-sm leading-6 text-white/80 sm:text-base sm:leading-7">
-                  Handmade, food safe finishes - elevate your home.
+                  Handmade, food safe finishes - elevate your kitchen.
                 </p>
 
                 {/* CTAs: stack on mobile so both are visible */}
@@ -66,7 +66,7 @@ export default function Hero() {
 
         {/* Caption bar only on desktop to keep mobile tight */}
         <div className="hidden sm:block px-10 py-3 text-sm text-muted-foreground">
-          Built to fit your space, finished with care.
+          High quality boards, finished with care.
         </div>
       </div>
     </section>
