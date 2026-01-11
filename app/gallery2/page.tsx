@@ -1,5 +1,6 @@
 import GalleryCard from "@/components/GalleryCard";
 import { GALLERY_IMAGES } from "@/lib/gallery-data";
+import Link from "next/link";
 
 function getMosaicSpan(index: number): string {
   const i = index % 12;
@@ -16,12 +17,20 @@ export default function Gallery2Page() {
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           Gallery
         </h1>
-        <p
-          className="mt-2 text-sm"
-          style={{ color: "hsl(var(--muted-foreground))" }}
-        >
-          Custom hardwood furniture crafted for you and your home.
-        </p>
+        {/* Tagline + CTA row */}
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
+            Custom hardwood furniture crafted for you and your home.
+          </p>
+
+          <Link
+            href="/contact"
+            className="ui-btn ui-btn-primary w-full sm:w-auto text-center"
+          >
+            Request a quote
+          </Link>
+        </div>
+       
       </header>
 
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-3 auto-rows-[220px]">
