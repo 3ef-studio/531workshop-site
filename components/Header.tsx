@@ -89,6 +89,7 @@ export default function Header() {
           <NavItem href="/gallery2">Custom Gallery</NavItem>
           <NavItem href="/about">About</NavItem>
           <NavItem href="/contact">Contact</NavItem>
+          <NavItem href="/faq">FAQ</NavItem>
         </nav>
 
         {/* Mobile button */}
@@ -134,6 +135,13 @@ export default function Header() {
               className="px-3 py-2 rounded-xl text-sm hover:bg-card/60"
             >
               Contact
+            </Link>
+            <Link
+              onClick={() => setOpen(false)}
+              href="/faq"
+              className="px-3 py-2 rounded-xl text-sm hover:bg-card/60"
+            >
+              FAQ
             </Link>
           </nav>
         </div>

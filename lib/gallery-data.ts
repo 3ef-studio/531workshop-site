@@ -101,6 +101,12 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     title: "Front Room Coat Storage",
   },
   {
+    id: "p004",
+    src: "/images/projects/Hickory-coffee-table.webp",
+    alt: "Hickory Coffee Table",
+    title: "Hickory Coffee Table",
+  },
+  {
     id: "p11",
     src: "/images/projects/Garage-Bar.webp",
     alt: "Garage Bar",
@@ -117,6 +123,12 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     src: "/images/projects/Living-Room-Cabinet.webp",
     alt: "Living Room Cabinet",
     title: "Living Room Cabinet",
+  },
+  {
+    id: "p005",
+    src: "/images/projects/Fonts.webp",
+    alt: "Baptism Fonts",
+    title: "Baptism Fonts",
   },
   {
     id: "p14",
