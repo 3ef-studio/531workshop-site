@@ -9,11 +9,28 @@ export const metadata = {
 export default async function ProductsPage() {
   const products = await getAllProducts();
 
+  const toPriceNumber = (s: string | null | undefined): number => {
+    if (!s) return Number.POSITIVE_INFINITY;
+
+    // strip everything except digits/decimal/sign
+    const cleaned = s.replace(/[^0-9.-]+/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+  };
+
   const ordered = [...products].sort((a, b) => {
-    // available first, then alpha by title
+    // available first
     if (a.status !== b.status) return a.status === "available" ? -1 : 1;
+
+    // then price low -> high
+    const aPrice = toPriceNumber(a.price_display);
+    const bPrice = toPriceNumber(b.price_display);
+    if (aPrice !== bPrice) return aPrice - bPrice;
+
+    // tie-breaker
     return a.title.localeCompare(b.title);
   });
+
 
   if (!ordered.length) {
     return (
