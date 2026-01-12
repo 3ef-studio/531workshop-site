@@ -1,18 +1,6 @@
 {
   "products": [
     {
-      "slug": "Shopify-test",
-      "title": "End-Grain Cutting Board",
-      "summary": "Ready-to-ship end-grain board in maple/walnut.",
-      "status": "available",
-      "shopify_product_id": "9078262071515",
-      "price_display": "$10",
-      "badges": ["Ready to Ship", "Cutting Board"],
-      "cta_primary": { "label": "Product Details", "url": "/shop/Shopify-test" },
-      "image_thumb": "/images/projects/Checkerboard-cutting-board.webp",
-      "image_hero": "/images/projects/Checkerboard-cutting-board.webp"
-    },
-    {
       "slug": "small-board",
       "title": "Small Cutting Board",
       "summary": "8” x 12” x ¾” thick cutting board",
@@ -83,44 +71,25 @@
     {
       "slug": "large-endgrain-board",
       "title": "Large End-Grain Cutting Board",
-      "summary": "12” x 18” x 1 ½” thick end-grain cutting board",
+      "summary": "12” x 18” x 1 3/4” thick end-grain cutting board",
       "status": "available",
       "shopify_product_id": "9086509908187",
-      "price_display": "$150",
+      "shopify_handle": "large-endgrain-board",
+      "price_display": "$175 - $290",
       "badges": ["Custom", "Woodworking"],
       "image_thumb": "/images/projects/sample-grain1.webp",
       "image_hero": "/images/projects/sample-grain1.webp",
       "cta_primary": { "label": "Product Details", "url": "/shop/large-endgrain-board" },
       "features": [
-        "12” x 18” x 1 ½” thick",
+        "12” x 18” x 1 3/4” thick",
         "Materials: Walnut, Maple, Cherry",
-        "Expert craftsmanship"
+        "Side Finger Grooves for easy lifting",
+        "End-Grain construction for durability and knife-friendliness"
       ],
       "variants": {
         "label": "Material",
         "options": ["Maple", "Cherry", "Walnut"]
       }   
-    },
-    {
-      "slug": "large-endgrain-juice-groove",
-      "title": "Large End-Grain Cutting Board with Juice Groove",
-      "summary": "12” x 18” x 1 ½” thick end-grain cutting board with juice groove",
-      "status": "available",
-      "price_display": "$160",
-      "shopify_product_id": "9087242797275",
-      "badges": ["Custom", "Woodworking"],
-      "image_thumb": "/images/projects/sample-grain2.webp",
-      "image_hero": "/images/projects/sample-grain2.webp",
-      "cta_primary": { "label": "Product Details", "url": "/shop/large-endgrain-juice-groove" },
-      "features": [
-        "12” x 18” x 1 ½” thick",
-        "Materials: Walnut, Maple, Cherry",
-        "Expert craftsmanship"
-      ],
-      "variants": {
-        "label": "Material",
-        "options": ["Maple", "Cherry", "Walnut"]
-      }  
     },
     {
       "slug": "large-board",
