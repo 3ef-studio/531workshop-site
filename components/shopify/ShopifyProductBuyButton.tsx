@@ -2,52 +2,14 @@
 
 import { useEffect, useId } from "react";
 
-/**
- * Minimal typings for Shopify Buy Button SDK (ShopifyBuy)
- * Shopify does not provide official TypeScript types for this SDK.
- */
-type ShopifyBuyUI = {
-  createComponent: (
-    type: "product" | "collection",
-    options: Record<string, unknown>
-  ) => void;
-};
-
-type ShopifyBuyUIFactory = {
-  onReady: (client: unknown) => Promise<ShopifyBuyUI>;
-};
-
-declare global {
-  interface Window {
-    ShopifyBuy?: {
-      buildClient: (config: {
-        domain: string;
-        storefrontAccessToken: string;
-      }) => unknown;
-      UI: ShopifyBuyUIFactory;
-    };
-  }
-}
-
 const SCRIPT_URL =
   "https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js";
 
-function getHslFromCssVar(varName: string, fallbackHsl: string) {
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue(varName)
-    .trim();
-
-  // shadcn tokens typically store HSL channels like: "210 40% 96.1%"
-  // Convert to valid CSS color: hsl(210 40% 96.1%)
-  return raw ? `hsl(${raw})` : fallbackHsl;
-}
-
 function loadBuyButtonSDK(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    // Already loaded
-    if (window.ShopifyBuy?.UI) return resolve();
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.ShopifyBuy?.UI) return Promise.resolve();
 
-    // Already requested
+  return new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(
       `script[src="${SCRIPT_URL}"]`
     );
@@ -70,47 +32,83 @@ function loadBuyButtonSDK(): Promise<void> {
   });
 }
 
+function hslVar(varName: string, fallbackHsl: string): string {
+  if (typeof window === "undefined") return fallbackHsl;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(varName)
+    .trim();
+  return raw ? `hsl(${raw})` : fallbackHsl;
+}
+
 type Props = {
-  /** Shopify Product ID (numeric string) */
-  productId: string;
-
-  /** Render width hint used by Shopify widget (px) */
+  productId: string; // numeric Shopify product id string
   width?: number;
-
-  /** Button label */
   buttonText?: string;
-
-  /** Override the checkout button text in the cart */
   checkoutText?: string;
-
-  /** Roundness used for Shopify widget buttons */
   borderRadiusPx?: number;
-
-  /**
-   * Whether to show variant options (e.g., Material dropdown) when product has variants.
-   * Defaults to true. If the product has no variants, Shopify simply won't render options.
-   */
   showOptions?: boolean;
+  showPrice?: boolean;
 };
 
 export default function ShopifyProductBuyButton({
   productId,
-  width = 280,
+  width = 320,
   buttonText = "Add to cart",
   checkoutText = "Checkout",
-  borderRadiusPx = 10,
-  showOptions = true,
+  borderRadiusPx = 12,
+  showOptions = false,
+  showPrice = false,
 }: Props) {
   const reactId = useId();
-  // useId can include ":" in React 18; sanitize for valid DOM id
   const nodeId = `shopify-product-${reactId.replace(/[:]/g, "")}`;
 
   useEffect(() => {
     let cancelled = false;
 
+    // Persist qty across BuyButton re-renders (variant change triggers render)
+    let persistedQty = 1;
+
+    function clampQty(n: number): number {
+      if (!Number.isFinite(n)) return 1;
+      return Math.max(1, Math.min(99, Math.floor(n)));
+    }
+
+    function readQtyFromNode(node: HTMLElement): number {
+      // BuyButton uses a quantity input when quantityInput is true
+      const input = node.querySelector<HTMLInputElement>('input[type="number"]');
+      if (!input) return persistedQty;
+      const v = clampQty(Number(input.value));
+      return v;
+    }
+
+    function writeQtyToNode(node: HTMLElement, qty: number) {
+      const input = node.querySelector<HTMLInputElement>('input[type="number"]');
+      if (!input) return;
+      const next = String(clampQty(qty));
+      if (input.value !== next) input.value = next;
+    }
+
+    function ensureQtyListeners(node: HTMLElement) {
+      // attach once
+      if (node.dataset.qtyListeners === "1") return;
+      node.dataset.qtyListeners = "1";
+
+      // Any input changes update persistedQty
+      node.addEventListener("input", (e) => {
+        const t = e.target;
+        if (t instanceof HTMLInputElement && t.type === "number") {
+          persistedQty = clampQty(Number(t.value));
+        }
+      });
+
+      // Some templates update qty via click buttons; keep persisted in sync after click too
+      node.addEventListener("click", () => {
+        persistedQty = readQtyFromNode(node);
+      });
+    }
+
     async function init() {
       const domain = process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN;
-      // NOTE: Keep token env name consistent with your existing implementation
       const token = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN;
 
       if (!domain || !token) {
@@ -134,139 +132,204 @@ export default function ShopifyProductBuyButton({
         storefrontAccessToken: token,
       });
 
-      await sdk.UI.onReady(client).then((ui: ShopifyBuyUI) => {
-        const node = document.getElementById(nodeId);
-        if (!node) return;
+      const ui = await sdk.UI.onReady(client);
+      if (cancelled) return;
 
-        // Prevent duplicates on client navigation / re-renders
-        node.innerHTML = "";
+      const node = document.getElementById(nodeId);
+      if (!node) return;
 
-        // Compute concrete colors from your theme tokens (Shopify widget won't reliably resolve var(--...))
-        const accentBg = getHslFromCssVar("--accent", "hsl(210 40% 96.1%)");
-        const accentFg = getHslFromCssVar(
-          "--accent-foreground",
-          "hsl(222 47% 11%)"
-        );
+      // Prevent duplicates on client navigation / re-renders
+      node.innerHTML = "";
 
-        const themedButtonStyles = {
+      // Theme tokens
+      const accentBg = hslVar("--accent", "hsl(210 40% 96.1%)");
+      const accentFg = hslVar("--accent-foreground", "hsl(222 47% 11%)");
+      const border = hslVar("--border", "hsl(214 32% 91%)");
+      const bg = hslVar("--background", "hsl(0 0% 100%)");
+      const fg = hslVar("--foreground", "hsl(222 47% 11%)");
+      const mutedFg = hslVar("--muted-foreground", "hsl(215.4 16.3% 46.9%)");
+
+      const radius = `${borderRadiusPx}px`;
+
+      const baseControl = {
+        "font-family": "inherit",
+        "border-radius": radius,
+      } as const;
+
+      const inputControl = {
+        ...baseControl,
+        border: `1px solid ${border}`,
+        "background-color": bg,
+        color: fg,
+        "min-height": "44px",
+      } as const;
+
+      const buttonStyles = {
+        ...baseControl,
+        "background-color": accentBg,
+        color: accentFg,
+        "min-height": "44px",
+        padding: "0 16px",
+        "font-weight": "600",
+        ":hover": {
           "background-color": accentBg,
-          color: accentFg,
-          "border-radius": `${borderRadiusPx}px`,
-          "font-family": "inherit",
-          ":hover": {
-            "background-color": accentBg,
-            filter: "brightness(0.95)",
-          },
-          ":focus": {
-            "background-color": accentBg,
-          },
-          ":active": {
-            "background-color": accentBg,
-            filter: "brightness(0.9)",
-          },
-        } as const;
+          filter: "brightness(0.95)",
+        },
+        ":active": {
+          "background-color": accentBg,
+          filter: "brightness(0.9)",
+        },
+        ":focus": {
+          "background-color": accentBg,
+        },
+      } as const;
 
-        const themedButtonWithQuantityStyles = {
-          "border-radius": `${borderRadiusPx}px`,
-          "font-family": "inherit",
-          ":hover": {
-            filter: "brightness(0.95)",
-          },
-          ":active": {
-            filter: "brightness(0.9)",
-          },
-        } as const;
+      // IMPORTANT: avoid buttonWithQuantity; explicitly render quantity + button
+      const order = showPrice
+        ? (["options", "price", "quantity", "button"] as const)
+        : (["options", "quantity", "button"] as const);
 
-        ui.createComponent("product", {
-          id: productId,
-          node,
-          moneyFormat: "%24%7B%7Bamount%7D%7D",
-          options: {
-            product: {
-              width: String(width),
-              contents: {
-                img: false,
-                title: false,
-                price: false,
-                button: false,
-                buttonWithQuantity: true,
-                // ✅ IMPORTANT: allows Shopify to render option selectors (variant dropdowns)
-                options: showOptions,
+      ui.createComponent("product", {
+        id: productId,
+        node,
+        moneyFormat: "%24%7B%7Bamount%7D%7D",
+        options: {
+          product: {
+            width: String(width),
+            iframe: true,
+            order,
+            contents: {
+              img: false,
+              title: false,
+              variantTitle: false,
+              description: false,
+              options: showOptions,
+              price: showPrice,
+              // ✅ quantity UI
+              quantity: true,
+              quantityInput: true,
+              quantityIncrement: false,
+              quantityDecrement: false,
+              // ✅ main button
+              button: true,
+              // ❌ do not use this template
+              buttonWithQuantity: false,
+            },
+            text: {
+              button: buttonText,
+            },
+            styles: {
+              // Keep layout tight and consistent
+              product: {
+                "font-family": "inherit",
+                "text-align": "left",
               },
-              text: {
-                button: buttonText,
+
+              // ✅ Put qty + button on one row
+              controls: {
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "flex-start",
+                gap: "12px",
+                margin: "12px 0 0 0",
               },
-              styles: {
-                // Shopify sometimes uses `button` or `buttonWithQuantity` depending on template
-                button: themedButtonStyles,
-                buttonWithQuantity: themedButtonWithQuantityStyles,
+
+              // Variant dropdowns
+              select: {
+                ...inputControl,
+                width: "100%",
+                padding: "0 12px",
+                "font-size": "14px",
+              },
+              selectIcon: { fill: mutedFg },
+              option: { color: fg },
+
+              // Price
+              price: {
+                "font-family": "inherit",
+                color: fg,
+                "font-size": "14px",
+                "font-weight": "600",
+              },
+
+              // Quantity wrapper (now uses controls row)
+              quantity: {
+                display: "flex",
+                "align-items": "center",
+                margin: "0",
+                padding: "0",
+              },
+              quantityInput: {
+                ...inputControl,
+                width: "80px",
+                "text-align": "center",
+              },
+              quantityIncrement: {
+                ...inputControl,
+                width: "44px",
+                padding: "0",
+              },
+              quantityDecrement: {
+                ...inputControl,
+                width: "44px",
+                padding: "0",
+              },
+
+              // Button (no longer full width)
+              button: {
+                ...buttonStyles,
+                margin: "0",
+                width: "auto",
+                "white-space": "nowrap",
               },
             },
 
-            // If a modal ever opens, keep it consistent
-            modalProduct: {
-              contents: {
-                img: false,
-                imgWithCarousel: true,
-                button: false,
-                buttonWithQuantity: true,
-                // keep options consistent in modal too
-                options: showOptions,
+            // ✅ Fix “qty resets to 1 when changing variants”
+            // Variant changes trigger re-renders. Re-apply our persisted qty each render.
+            events: {
+              afterRender: () => {
+                const host = document.getElementById(nodeId);
+                if (!host) return;
+                ensureQtyListeners(host);
+                writeQtyToNode(host, persistedQty);
               },
-              styles: {
-                button: themedButtonStyles,
-                buttonWithQuantity: themedButtonStyles,
+              addVariantToCart: () => {
+                const host = document.getElementById(nodeId);
+                if (!host) return;
+                persistedQty = readQtyFromNode(host);
+                writeQtyToNode(host, persistedQty);
               },
-              text: {
-                button: buttonText,
-              },
-            },
-
-            // Cart checkout button styling (otherwise defaults can appear as green/blue on hover)
-            cart: {
-              text: {
-                total: "Subtotal",
-                button: checkoutText,
-              },
-              styles: {
-                button: themedButtonStyles,
-              },
-            },
-
-            // Cart toggle button styling
-            toggle: {
-              styles: {
-                toggle: {
-                  "background-color": accentBg,
-                  "border-radius": `${borderRadiusPx}px`,
-                  ":hover": {
-                    "background-color": accentBg,
-                    filter: "brightness(0.95)",
-                  },
-                  ":focus": {
-                    "background-color": accentBg,
-                  },
-                  ":active": {
-                    "background-color": accentBg,
-                    filter: "brightness(0.9)",
-                  },
-                },
-                count: {
-                  color: accentFg,
-                  "font-family": "inherit",
-                },
+              updateQuantity: () => {
+                const host = document.getElementById(nodeId);
+                if (!host) return;
+                persistedQty = readQtyFromNode(host);
               },
             },
           },
-        });
+
+          cart: {
+            text: { total: "Subtotal", button: checkoutText },
+            styles: { button: buttonStyles },
+          },
+
+          toggle: {
+            styles: {
+              toggle: { ...buttonStyles, padding: "0 12px" },
+              count: {
+                color: accentFg,
+                "font-family": "inherit",
+                "font-weight": "700",
+              },
+            },
+          },
+        },
       });
     }
 
-    init().catch((e) => console.error("Shopify Buy Button init failed:", e));
+    void init();
 
     return () => {
       cancelled = true;
-      // Optional cleanup: clear widget markup on unmount to avoid flashes on route back
       const node = document.getElementById(nodeId);
       if (node) node.innerHTML = "";
     };
@@ -277,6 +340,7 @@ export default function ShopifyProductBuyButton({
     checkoutText,
     borderRadiusPx,
     showOptions,
+    showPrice,
     nodeId,
   ]);
 

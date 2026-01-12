@@ -1,3 +1,5 @@
+// app/shop/[slug]/page.tsx
+
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductBySlug } from "@/lib/products";
@@ -64,13 +66,15 @@ export default async function ProductDetailPage({ params }: PageProps) {
     variants,
   } = product as typeof product & {
     shopify_product_id?: string;
+    shopify_handle?: string;
     variants?: VariantConfig;
   };
 
   const heroSrc = image_hero ?? image_thumb;
 
   const isRapid = pricing?.provider === "rapidapi";
-  const tiers = isRapid && "tiers" in (pricing ?? {}) ? pricing?.tiers ?? [] : [];
+  const tiers =
+    isRapid && "tiers" in (pricing ?? {}) ? (pricing?.tiers ?? []) : [];
 
   const isPurchasable =
     status === "available" &&
@@ -78,6 +82,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
     shopify_product_id.length > 0;
 
   const showOptions = hasVariants(variants);
+
+  // Use the custom configurable UI only when:
+  // - the product is purchasable
+  // - it has variants
+  // - we have a Shopify handle in products.json
+ 
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16 space-y-8">
@@ -138,14 +148,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <p className="text-muted-foreground max-w-2xl">{summary}</p>
         ) : null}
 
-        {(price_display || (isRapid && tiers[0]?.price_month)) ? (
+        {(price_display || (isRapid && tiers[0]?.price_month)) && !showOptions ? (
           <div className="text-sm font-medium">
             {price_display ?? `From $${tiers[0]?.price_month}/mo`}
           </div>
         ) : null}
 
         {/* PDP CTA area:
-            - Purchasable (available + shopify_product_id): show Shopify add-to-cart + qty
+            - Purchasable (available + shopify_product_id): show add-to-cart + qty
             - Otherwise (and not coming-soon): show cta_primary (e.g., Request a quote)
         */}
         {status !== "coming-soon" ? (
@@ -157,6 +167,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 checkoutText="Checkout"
                 borderRadiusPx={10}
                 showOptions={showOptions}
+                showPrice={showOptions} // show live variant price only when variants exist
               />
             </div>
           ) : cta_primary ? (
@@ -168,6 +179,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
             </Link>
           ) : null
         ) : null}
+
       </header>
 
       {isRapid && tiers.length > 0 ? (
