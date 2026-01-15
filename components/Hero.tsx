@@ -3,10 +3,10 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="mx-auto max-w-6xl px-0 sm:px-6 pt-4 sm:pt-10">
+    <section className="mx-auto max-w-6xl px-0 sm:px-6 pt-0 sm:pt-4">
       {/* Full-bleed on mobile, card on desktop */}
       <div className="overflow-hidden sm:ui-card">
-        <div className="relative w-full aspect-9/14 sm:aspect-3/2">
+        <div className="relative w-full aspect-4/5 sm:aspect-16/7">
           <Image
             src="/images/projects/DSC01481.webp"
             alt="Custom woodworking project by 531 Workshop"
@@ -35,7 +35,7 @@ export default function Hero() {
 
           {/* Content */}
           <div className="absolute inset-0 flex items-end">
-            <div className="w-full p-4 sm:p-10">
+            <div className="w-full p-4 sm:p-6">
               <div className="max-w-2xl">
                 <p className="text-xs tracking-wide uppercase text-white/80">
                   Hardwood Cutting Boards
@@ -65,7 +65,7 @@ export default function Hero() {
         </div>
 
         {/* Caption bar only on desktop to keep mobile tight */}
-        <div className="hidden sm:block px-10 py-3 text-sm text-muted-foreground">
+        <div className="hidden sm:block px-8 py-2 text-sm text-muted-foreground">
           High quality boards, finished with care.
         </div>
       </div>

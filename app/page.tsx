@@ -7,7 +7,7 @@ import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl p-3 sm:p-3">
+    <main className="mx-auto max-w-6xl">
       <Hero />
 
       {/* Value Props */}

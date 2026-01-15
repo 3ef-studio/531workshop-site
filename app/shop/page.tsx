@@ -35,7 +35,7 @@ export default async function ProductsPage() {
   if (!ordered.length) {
     return (
       <div className="py-12 px-6">
-        <h1 className="text-2xl font-semibold">Products</h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Products</h1>
         <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
           <p className="text-muted-foreground mt-2">
             Nothing here yet—check back soon.
@@ -47,8 +47,8 @@ export default async function ProductsPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">Products</h1>
+      <header className="mb-10">
+       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Products</h1>
         <div className="mt-4 space-y-3">
           <p className="text-muted-foreground max-w-2xl">
             Custom made products from 531 Workshop.
