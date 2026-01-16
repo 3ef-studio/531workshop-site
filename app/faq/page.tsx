@@ -5,22 +5,24 @@ import { faqItems } from "@/lib/faq-data";
 export const metadata: Metadata = {
   title: "Frequently Asked Questions | 531 Workshop",
   description:
-    "Answers to common questions about custom woodworking projects, materials, lead times, and ordering from 531 Workshop.",
+    "Answers to common questions about cutting boards and custom woodworking projects, materials, lead times, and ordering from 531 Workshop.",
 };
 
 export default function FaqPage() {
   return (
-    <section className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
+    <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
+    
+      <header className="mb-8">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Frequently Asked Questions
       </h1>
 
-      <p className="mb-10 text-muted-foreground">
+      <p className="mt-4 max-w-prose text-base text-muted-foreground">
         Answers to common questions about custom projects, materials, lead times,
         and ordering. If you don’t see what you’re looking for, feel free to get
         in touch.
       </p>
-
+      </header>
       <div className="space-y-4">
         {faqItems.map((item, index) => (
           <details
@@ -43,6 +45,7 @@ export default function FaqPage() {
           </details>
         ))}
       </div>
-    </section>
+    
+  </main>
   );
 }
