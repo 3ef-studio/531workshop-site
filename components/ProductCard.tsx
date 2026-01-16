@@ -62,48 +62,55 @@ export default function ProductCard({ product }: Props) {
           </span>
         )}
       </div>
+{/* Title & summary (fixed height) */}
+      <div className="mt-3">
+        <h3 className="text-lg font-semibold leading-snug line-clamp-2 min-h-12">
+          <Link href={`/shop/${product.slug}`} className="hover:underline underline-offset-2">
+            {title}
+          </Link>
+        </h3>
 
-      {/* Title & summary */}
-      <h3 className="mt-3 text-lg font-semibold">
-        <Link href={`/shop/${product.slug}`} className="hover:underline underline-offset-2">
-          {title}
-        </Link>
-      </h3>
-      <p className="text-muted-foreground mt-2 text-sm">{summary}</p>
-
-      {/* Price / tiers */}
-      <div className="mt-4 text-sm">
-        {price_display ? (
-          <div className="font-medium">{price_display}</div>
-        ) : isRapid && fromTier?.price_month ? (
-          <div className="font-medium">From ${fromTier.price_month}/mo</div>
-        ) : null}
-
-        {isRapid && tiers.length > 0 && (
-          <ul className="mt-2 space-y-1 text-muted-foreground">
-            {tiers.slice(0, 3).map((t) => (
-              <li key={t.name} className="flex items-center justify-between">
-                <span>
-                  {t.name}
-                  {t.rate_limit ? ` · ${t.rate_limit}` : ""}
-                </span>
-                {typeof t.price_month === "number" ? <span>${t.price_month}/mo</span> : null}
-              </li>
-            ))}
-          </ul>
-        )}
+        <p className="text-muted-foreground mt-2 text-sm leading-snug line-clamp-2 min-h-[2.6rem]">
+          {summary}
+        </p>
       </div>
 
-      {/* CTA */}
-      <div className="mt-5 pt-1">
-        {cta_primary ? (
-          <Link
-            href={cta_primary.url}
-            className="inline-flex items-center rounded-xl px-4 py-2 bg-accent text-accent-foreground font-medium hover:opacity-90 transition"
-          >
-            {cta_primary.label}
-          </Link>
-        ) : null}
+      {/* Bottom section pinned */}
+      <div className="mt-auto pt-4">
+        {/* Price / tiers */}
+        <div className="text-sm">
+          {price_display ? (
+            <div className="font-medium">{price_display}</div>
+          ) : isRapid && fromTier?.price_month ? (
+            <div className="font-medium">From ${fromTier.price_month}/mo</div>
+          ) : null}
+
+          {isRapid && tiers.length > 0 && (
+            <ul className="mt-2 space-y-1 text-muted-foreground">
+              {tiers.slice(0, 3).map((t) => (
+                <li key={t.name} className="flex items-center justify-between">
+                  <span>
+                    {t.name}
+                    {t.rate_limit ? ` · ${t.rate_limit}` : ""}
+                  </span>
+                  {typeof t.price_month === "number" ? <span>${t.price_month}/mo</span> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-5 pt-1">
+          {cta_primary ? (
+            <Link
+              href={cta_primary.url}
+              className="inline-flex items-center rounded-xl px-4 py-2 bg-accent text-accent-foreground font-medium hover:opacity-90 transition"
+            >
+              {cta_primary.label}
+            </Link>
+          ) : null}
+        </div>
       </div>
     </article>
   );
