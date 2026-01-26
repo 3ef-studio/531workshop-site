@@ -49,6 +49,15 @@ export type GalleryImage = {
  * Keep `src` paths under /public so they work with next/image.
  */
 export const GALLERY_IMAGES: GalleryImage[] = [
+    {
+    id: "p07",
+    src: "/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp",
+    alt: "Epoxy River Coffee Table Sycamore",
+    title: "Epoxy River Coffee Table Sycamore",
+    materials: ["Sycamore", "Epoxy"],
+    year: "2021",
+    dimensions: "48\" x 24\" x 18\"",
+  },
   {
     id: "p02",
     src: "/images/projects/Barnwood-Beam-Console-table.webp",
@@ -72,15 +81,6 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     src: "/images/projects/Checkerboard-cutting-board.webp",
     alt: "Checkerboard cutting board",
     title: "Checkerboard Cutting Board",
-  },
-  {
-    id: "p07",
-    src: "/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp",
-    alt: "Epoxy River Coffee Table Sycamore",
-    title: "Epoxy River Coffee Table Sycamore",
-    materials: ["Sycamore", "Epoxy"],
-    year: "2021",
-    dimensions: "48\" x 24\" x 18\"",
   },
   {
     id: "p08",

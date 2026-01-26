@@ -94,6 +94,7 @@ export default function AboutPage() {
         <div className="not-prose mt-8">
           <div className="flex gap-6 overflow-x-auto px-6 lg:px-12 pb-4">
             {[
+              "shadowbox-coffee-table.webp",
               "Working-pic-2.jpg",
               "DSC01430.webp",
               "Puzzle-table-rough-layout.webp",
