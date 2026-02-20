@@ -17,7 +17,7 @@ export default function Hero() {
           />
 
           {/* Stronger overlay on mobile for legibility */}
-          <div className="absolute inset-0 bg-black/50 sm:bg-black/35" />
+          <div className="absolute inset-0 bg-black/35 sm:bg-black/25" />
 
           {/* Logo watermark (subtle) */}
           <div className="pointer-events-none absolute top-3 right-3 sm:top-6 sm:right-6">
