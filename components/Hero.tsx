@@ -35,7 +35,7 @@ export default function Hero() {
 
           {/* Content */}
           <div className="absolute inset-0 flex items-end">
-            <div className="w-full p-4 sm:p-6">
+            <div className="w-full p-4 sm:p-6 pb-10 sm:pb-14">
               <div className="max-w-2xl">
                 <p className="text-xs tracking-wide uppercase text-white/80">
                   Hardwood Cutting Boards
