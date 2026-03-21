@@ -65,6 +65,12 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     title: "Barnwood Beam Console Table",
   },
   {
+    id: "p31",
+    src: "/images/projects/Keepsake-Boxes.webp",
+    alt: "Keepsake Boxes",
+    title: "Keepsake Boxes",
+  },
+  {
     id: "p03",
     src: "/images/projects/Bedroom-remodel.webp",
     alt: "Bedroom Remodel",
@@ -81,6 +87,12 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     src: "/images/projects/Checkerboard-cutting-board.webp",
     alt: "Checkerboard cutting board",
     title: "Checkerboard Cutting Board",
+  },
+  {
+    id: "p13",
+    src: "/images/projects/Living-Room-Cabinet.webp",
+    alt: "Living Room Cabinet",
+    title: "Living Room Cabinet",
   },
   {
     id: "p08",
@@ -113,16 +125,19 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     title: "Garage Bar",
   },
   {
+    id: "p07",
+    src: "/images/projects/Inscription-LD.webp",
+    alt: "Inscription LD",
+    title: "Inscription LD",
+    materials: ["Wood", "Ink"],
+    year: "2022",
+    dimensions: "24\" x 36\" x 1\"",
+  },
+  {
     id: "p12",
     src: "/images/projects/Live-Edge-Coffee-Table.webp",
     alt: "Live Edge Coffee Table",
     title: "Live Edge Coffee Table",
-  },
-  {
-    id: "p13",
-    src: "/images/projects/Living-Room-Cabinet.webp",
-    alt: "Living Room Cabinet",
-    title: "Living Room Cabinet",
   },
   {
     id: "p005",

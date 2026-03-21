@@ -49,9 +49,9 @@ export const FEATURED_ITEMS: FeaturedItem[] = [
   },
   {
     id: "feat-2",
-    title: "Checkerboard Cutting Board",
-    description: "A beautiful checkerboard pattern with a durable finish.",
-    imageSrc: "/images/projects/Checkerboard-cutting-board.webp",
+    title: "Custom Keepsake Boxes",
+    description: "Custom keepsake boxes for your treasured memories. Crafted with care and attention to detail, these boxes are designed to hold your most precious items.",
+    imageSrc: "/images/projects/Inscription-LD.webp",
     href: "/gallery2",
     tag: "Featured",
   },
