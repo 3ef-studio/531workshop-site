@@ -66,7 +66,7 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p31",
-    src: "/images/projects/Keepsake-Boxes.webp",
+    src: "/images/projects/Keepsake-boxes.webp",
     alt: "Keepsake Boxes",
     title: "Keepsake Boxes",
   },
