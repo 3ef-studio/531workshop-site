@@ -17,48 +17,62 @@ export default function Gallery2Page() {
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Gallery
         </h1>
+
         {/* Tagline + CTA row */}
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
+          <p
+            className="text-sm"
+            style={{ color: "hsl(var(--muted-foreground))" }}
+          >
             Custom hardwood furniture crafted for you and your home.
           </p>
 
           <Link
             href="/contact"
-            className="ui-btn ui-btn-primary w-full sm:w-auto text-center"
+            className="ui-btn ui-btn-primary w-full text-center sm:w-auto"
           >
             Request a quote
           </Link>
         </div>
-       
       </header>
 
-      <section className="grid grid-cols-1 gap-6 sm:grid-cols-3 auto-rows-[220px]">
+      <section
+        aria-label="Custom woodworking gallery"
+        className="grid auto-rows-[220px] grid-cols-1 gap-6 sm:grid-cols-3"
+      >
         {GALLERY_IMAGES.map((item, idx) => (
           <div
             key={item.id}
             className={[
-              "relative overflow-hidden", // IMPORTANT: clip within cell
+              "relative overflow-hidden", // clip within cell
               "transition-transform duration-200",
-              "hover:z-20",              // bring hovered tile above neighbors
+              "hover:z-20", // bring hovered tile above neighbors
               getMosaicSpan(idx),
             ].join(" ")}
           >
-            <GalleryCard item={item} titleOnHover fillParent />
+            <GalleryCard
+              item={item}
+              titleOnHover
+              fillParent
+              scaleOnHover
+              detailsOnClick
+            />
           </div>
         ))}
       </section>
 
-      <div className="relative aspect-video overflow-hidden rounded-lg">
-            <iframe
-              className="absolute inset-0 h-full w-full"
-              src="https://www.youtube-nocookie.com/embed/wQ63sQTePeE?rel=0&modestbranding=1"
-              title="531 Workshop"
-              loading="lazy"
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
+      <section className="mt-12" aria-label="531 Workshop video">
+        <div className="relative aspect-video overflow-hidden rounded-lg">
+          <iframe
+            className="absolute inset-0 h-full w-full"
+            src="https://www.youtube-nocookie.com/embed/wQ63sQTePeE?rel=0&modestbranding=1"
+            title="531 Workshop"
+            loading="lazy"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </section>
     </main>
   );
 }
