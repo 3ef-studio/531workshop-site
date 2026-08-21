@@ -161,6 +161,18 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     tags: ["entryway storage", "coat storage", "board and batten", "red oak", "mudroom"],
   },
   {
+    id: "p5841",
+    src: "/images/projects/IMG_5841.webp",
+    alt: "Custom baptismal font.",
+    title: "Baptismal font",
+  },
+  {
+    id: "p5857",
+    src: "/images/projects/IMG_5857.webp",
+    alt: "Custom Chest of Drawers.",
+    title: "Chest of Drawers",
+  },
+  {
     id: "p004",
     src: "/images/projects/Hickory-coffee-table.webp",
     alt: "Custom hickory coffee table with natural wood grain.",
