@@ -1,43 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  validateContactForm,
+  type ContactFormValues,
+} from "@/lib/contactValidation";
 
-type FormState = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  message: string;
-};
-
-type Errors = Partial<Record<keyof FormState, string>>;
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validate(values: FormState): Errors {
-  const e: Errors = {};
-
-  if (!values.firstName.trim()) e.firstName = "First name is required.";
-  if (!values.lastName.trim()) e.lastName = "Last name is required.";
-
-  const email = values.email.trim();
-  if (!email) e.email = "Email is required.";
-  else if (!emailRegex.test(email)) e.email = "Please enter a valid email.";
-
-  // phone optional — if present, lightly validate
-  const phone = values.phone.trim();
-  if (phone) {
-    const digits = phone.replace(/[^\d]/g, "");
-    if (digits.length < 10) e.phone = "Please enter a valid phone number (10+ digits).";
-  }
-
-  const msg = values.message.trim();
-  if (!msg) e.message = "Message is required.";
-  else if (msg.length < 20) e.message = "Please share a few details (at least 20 characters).";
-  else if (msg.length > 4000) e.message = "Message is too long.";
-
-  return e;
-}
+type FormState = ContactFormValues;
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <div className="text-sm font-medium">{children}</div>;
@@ -68,7 +37,7 @@ export default function ContactForm() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const errors = useMemo(() => validate(values), [values]);
+  const errors = useMemo(() => validateContactForm(values), [values]);
   const hasErrors = Object.keys(errors).length > 0;
 
   function onBlur(field: keyof FormState) {

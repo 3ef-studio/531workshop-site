@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+
+export const metadata: Metadata = {
+  // Canonical ignores the ?confirmed / ?error query variants.
+  alternates: { canonical: "/contact" },
+};
 
 export default async function ContactPage({
   searchParams,

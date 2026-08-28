@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import GalleryCard from "@/components/GalleryCard";
 import { GALLERY_IMAGES } from "@/lib/gallery-data";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/gallery2" },
+};
 
 function getMosaicSpan(index: number): string {
   const i = index % 12;

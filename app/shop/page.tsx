@@ -1,36 +1,15 @@
-import { getAllProducts } from "@/lib/products";
+import { getAllProducts, sortProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 
 export const metadata = {
   title: "Products • 531 Workshop",
   description: "Products from 531 Workshop.",
+  alternates: { canonical: "/shop" },
 };
 
 export default async function ProductsPage() {
   const products = await getAllProducts();
-
-  const toPriceNumber = (s: string | null | undefined): number => {
-    if (!s) return Number.POSITIVE_INFINITY;
-
-    // strip everything except digits/decimal/sign
-    const cleaned = s.replace(/[^0-9.-]+/g, "");
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
-  };
-
-  const ordered = [...products].sort((a, b) => {
-    // available first
-    if (a.status !== b.status) return a.status === "available" ? -1 : 1;
-
-    // then price low -> high
-    const aPrice = toPriceNumber(a.price_display);
-    const bPrice = toPriceNumber(b.price_display);
-    if (aPrice !== bPrice) return aPrice - bPrice;
-
-    // tie-breaker
-    return a.title.localeCompare(b.title);
-  });
-
+  const ordered = sortProducts(products);
 
   if (!ordered.length) {
     return (

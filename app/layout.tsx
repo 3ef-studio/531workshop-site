@@ -17,7 +17,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   openGraph: { type: "website", url: SITE.url, title: SITE.name, description: SITE.description, siteName: SITE.name },
   twitter: { card: "summary_large_image", title: SITE.name, description: SITE.description, creator: "@3EF_Studio" },
-  alternates: { canonical: "/" },
+  // Canonical URLs are declared per route (see each page's `metadata` /
+  // `generateMetadata`). A global canonical here would force every page to
+  // canonicalize to "/".
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import Hero from "@/components/Hero";
 import { VALUE_PROPS, FEATURED_ITEMS, TESTIMONIALS, TESTIMONIAL_META } from "@/lib/home-data";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (
