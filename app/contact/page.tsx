@@ -66,7 +66,9 @@ export default async function ContactPage({
           <div className="ui-card p-6">
             <h2 className="text-sm font-semibold">Phone</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              (630) 659-9548
+              <a className="hover:underline" href="tel:+16306385504">
+                (630) 638-5504
+              </a>
             </p>
           </div>
 
