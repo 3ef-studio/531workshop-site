@@ -1,9 +1,11 @@
 # TECHNICAL DEBT / RISK REGISTER — 531 Workshop Site
 
-_Last reviewed: 2026-08-27 (HEAD `eb40364`). This is an inventory; fixes happen in later,
-scoped missions. Items are grouped by area and each is tagged **[Confirmed]** (verified in
-the code), **[Investigate]** (needs runtime checking or product context), or
-**[Resolved <date>]** (fixed in a later mission, with a note on how)._
+_Last reviewed: 2026-08-27 (HEAD `eb40364`); F1 updated 2026-09-04. This is an inventory;
+fixes happen in later, scoped missions. Items are grouped by area and each is tagged
+**[Confirmed]** (verified in the code), **[Investigate]** (needs runtime checking or
+product context), **[Resolved <date>]** (fixed in a later mission, with a note on how), or
+**[Deferred <date>]** (evaluated and consciously left as-is, with the reasoning and what
+to watch for noted)._
 
 ---
 
@@ -195,13 +197,50 @@ accessibility debt.
 
 ## F. Commerce
 
-### F1. Shopify Buy Button SDK loaded from `latest` (unpinned) — **[Confirmed]**
+### F1. Shopify Buy Button SDK loaded from `latest` (unpinned) — **[Deferred 2026-09-04]**
 `components/shopify/ShopifyProductBuyButton.tsx:5` and
 `components/shopify/buyButtonUI.ts:4` load
 `.../buy-button/latest/buy-button-storefront.min.js`. Shopify can change the embed's
 markup/behavior at any time. The quantity‑persistence workaround
 (`persistedQty` + `afterRender`/`updateQuantity` DOM poking, `ShopifyProductBuyButton.tsx:65-108,289-307`)
 is coupled to current SDK internals and could break on an SDK update.
+
+**Decision (2026-09-04): stay unpinned, do not pin the version at this time — monitor
+instead.** Context that led to this call:
+
+- Shopify deprecated the **Checkout APIs** that the underlying JS Buy SDK depended on,
+  with a hard deadline (mid‑2025) after which purchases would fail on outdated builds.
+  Shopify shipped a final SDK major version (v3.0+) that swaps the internals to the newer
+  **Cart APIs** to keep functioning. Buy Button JS itself (the widget this site embeds)
+  is **not** deprecated as a product — Shopify's current docs still list it as the
+  supported way to embed a buy button on a non‑Shopify site — but it explicitly states
+  **"this SDK isn't supported by Shopify support."**
+- Because this repo loads the CDN `.../latest/...` build rather than a pinned version, the
+  site silently picked up the Cart‑API‑based fix with no code change and no deploy —
+  checkout never broke. That is very likely *why* this integration has been stable through
+  a deprecation cycle that broke pinned/outdated integrations elsewhere.
+- Pinning to a specific version would trade that "auto‑inherits Shopify's future fixes"
+  behavior for predictability — but predictability only pays off if someone actually
+  watches Shopify's Buy Button JS / JS Buy SDK changelog and bumps the pin when needed.
+  No one is currently doing that, so pinning now would risk *removing* the safety net
+  (auto‑fix) without replacing it with the thing that makes pinning safe (active
+  monitoring) — likely a net negative for a small site with no dedicated ops capacity.
+- Business value of pinning today is effectively zero (stability only, no visible
+  feature); revisit only if it's bundled into other work already touching this component
+  (see below), or if evidence emerges that `latest` broke something.
+
+**What "monitor instead" means going forward:**
+- Periodically confirm add‑to‑cart / checkout still works on the PDP (`/shop/[slug]`) —
+  no fixed cadence has been set; this is currently informal, not a scheduled check.
+- Watch for Shopify announcing another breaking change to Buy Button JS / the Cart API
+  (Shopify's developer changelog: `shopify.dev/changelog`) — since Shopify support does
+  not cover this SDK, a future breaking change would surface as a silent failure (empty
+  or broken CTA on the PDP, per F2) rather than a warning.
+- **Bundle a version pin in opportunistically**, not as a standalone task — specifically,
+  if `ShopifyProductBuyButton.tsx` is touched for another reason (e.g. a future per‑variant
+  image feature was scoped and shelved as low‑impact/high‑uncertainty — see project notes),
+  pin to whatever version is manually verified working at that time rather than pinning
+  blindly now.
 
 ### F2. No visible fallback when the Buy Button fails to render — **[Confirmed]**
 Missing `NEXT_PUBLIC_SHOPIFY_*` vars or a script‑load failure results in `console.warn` /
