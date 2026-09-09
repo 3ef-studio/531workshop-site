@@ -156,16 +156,12 @@ export default function Hero() {
           <div className="absolute inset-0 flex items-end">
             <div className="w-full p-4 sm:p-6 pb-10 sm:pb-14">
               <div className="max-w-2xl">
-                <p className="text-xs tracking-wide uppercase text-white/80">
-                  Hardwood Cutting Boards
-                </p>
-
-                <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                   Crafted for you and your home.
                 </h1>
 
                 <p className="mt-3 text-sm leading-6 text-white/80 sm:text-base sm:leading-7">
-                  Handmade, food safe finishes - elevate your kitchen.
+                  Custom built, designed to last a lifetime.
                 </p>
 
                 {/* CTAs: compact and side-by-side by default; wrap to a second row
