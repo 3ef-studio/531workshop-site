@@ -94,7 +94,7 @@
       ],
       "variants": {
         "label": "Material",
-        "options": ["Maple", "Cherry", "Walnut"]
+        "options": ["Maple", "Walnut"]
       }   
     },
     {
