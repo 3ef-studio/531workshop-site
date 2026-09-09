@@ -168,18 +168,19 @@ export default function Hero() {
                   Handmade, food safe finishes - elevate your kitchen.
                 </p>
 
-                {/* CTAs: stack on mobile so both are visible */}
-                <div className="mt-5 grid gap-3 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
+                {/* CTAs: compact and side-by-side by default; wrap to a second row
+                    (still natural-width, never mid-word) if they don't both fit. */}
+                <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
                   <Link
                     href="/gallery2"
-                    className="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-medium bg-white text-black hover:opacity-90 transition text-center"
+                    className="whitespace-nowrap rounded-2xl bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:opacity-90 sm:px-5 sm:py-3"
                   >
                     View Our Work
                   </Link>
 
                   <Link
                     href="/contact"
-                    className="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-medium border border-white/70 text-white hover:bg-white/10 transition text-center"
+                    className="whitespace-nowrap rounded-2xl border border-white/70 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 sm:px-5 sm:py-3"
                   >
                     Start a Custom Project
                   </Link>
@@ -191,6 +192,7 @@ export default function Hero() {
           {/* Rotation controls — only rendered when there's something to rotate through */}
           {hasMultipleSlides ? (
             <>
+              {/* Project info/details: desktop only (hidden on mobile per design). */}
               <button
                 type="button"
                 onClick={toggleInfo}
@@ -201,7 +203,7 @@ export default function Hero() {
                     ? "Hide project details"
                     : `Show project details${activeSlide?.title ? ` for ${activeSlide.title}` : ""}`
                 }
-                className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/30 text-xs font-semibold text-white transition hover:bg-black/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:left-3 sm:top-3"
+                className="absolute left-3 top-3 hidden h-7 w-7 items-center justify-center rounded-full bg-black/30 text-xs font-semibold text-white transition hover:bg-black/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:flex"
               >
                 i
               </button>
@@ -209,7 +211,7 @@ export default function Hero() {
               {showInfo && activeSlide ? (
                 <div
                   id="hero-slide-info"
-                  className="absolute left-2 top-11 max-w-[80%] rounded-xl bg-black/60 p-3 text-white backdrop-blur-sm sm:left-3 sm:top-12 sm:max-w-xs"
+                  className="absolute left-3 top-12 hidden max-w-xs rounded-xl bg-black/60 p-3 text-white backdrop-blur-sm sm:block"
                 >
                   {activeSlide.title ? (
                     <div className="text-sm font-semibold">{activeSlide.title}</div>
@@ -222,9 +224,10 @@ export default function Hero() {
                 </div>
               ) : null}
 
-              {/* Prev / dots / next grouped in one bottom-center cluster, below the
-                  headline+CTA block so it never overlaps hero text on any breakpoint. */}
-              <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-3 sm:bottom-3">
+              {/* Prev / dots / next / pause, overlaid on the photo — desktop only.
+                  On mobile this same cluster renders below the image instead
+                  (see the block right after this image container closes). */}
+              <div className="absolute bottom-3 left-1/2 hidden -translate-x-1/2 items-center gap-3 sm:flex">
                 <button
                   type="button"
                   onClick={prev}
@@ -279,6 +282,64 @@ export default function Hero() {
             </>
           ) : null}
         </div>
+
+        {/* Prev / dots / next / pause again, mobile only — plain page background
+            instead of overlaying the photo. Same handlers/state as the desktop
+            overlay cluster above; only placement and colors differ. */}
+        {hasMultipleSlides ? (
+          <div className="flex items-center justify-center gap-3 py-3 sm:hidden">
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Previous project photo"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10 text-foreground transition hover:bg-foreground/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+            >
+              <span aria-hidden="true">‹</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              {slides.map((slide, i) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-label={`Show project photo ${i + 1}${slide.title ? `: ${slide.title}` : ""}`}
+                  aria-current={i === index ? "true" : undefined}
+                  className={`h-2 w-2 rounded-full transition ${
+                    i === index ? "bg-foreground" : "bg-foreground/30"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Next project photo"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10 text-foreground transition hover:bg-foreground/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+            >
+              <span aria-hidden="true">›</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={togglePause}
+              disabled={prefersReducedMotion}
+              aria-label={
+                prefersReducedMotion
+                  ? "Automatic rotation is off because your device prefers reduced motion"
+                  : isPaused
+                  ? "Resume automatic rotation"
+                  : "Pause automatic rotation"
+              }
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10 text-foreground transition hover:bg-foreground/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-50 disabled:hover:bg-foreground/10"
+            >
+              <span aria-hidden="true">
+                {!prefersReducedMotion && isPaused ? "►" : "❚❚"}
+              </span>
+            </button>
+          </div>
+        ) : null}
 
         {/* Caption bar only on desktop to keep mobile tight */}
         <div className="hidden sm:block px-8 py-2 text-sm text-muted-foreground">
