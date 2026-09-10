@@ -1,15 +1,30 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import Hero from "@/components/Hero";
-import { VALUE_PROPS, FEATURED_ITEMS, TESTIMONIALS, TESTIMONIAL_META } from "@/lib/home-data";
+import { VALUE_PROPS, FEATURED_PRODUCT_SLUGS, TESTIMONIALS, TESTIMONIAL_META } from "@/lib/home-data";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
+import ProductCard from "@/components/ProductCard";
+import { getProductBySlug } from "@/lib/products";
+import type { Product } from "@/types/product";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default function Home() {
+export default async function Home() {
+  const featuredProducts = (
+    await Promise.all(FEATURED_PRODUCT_SLUGS.map((slug) => getProductBySlug(slug)))
+  ).filter((p): p is Product => Boolean(p));
+
+  if (process.env.NODE_ENV !== "production" && featuredProducts.length !== FEATURED_PRODUCT_SLUGS.length) {
+    const missing = FEATURED_PRODUCT_SLUGS.filter(
+      (slug) => !featuredProducts.some((p) => p.slug === slug)
+    );
+    console.warn(
+      `Home: FEATURED_PRODUCT_SLUGS references unknown slug(s): ${missing.join(", ")}. Skipping.`
+    );
+  }
+
   return (
     <main className="mx-auto max-w-6xl">
       <Hero />
@@ -37,60 +52,36 @@ export default function Home() {
             Request a quote
           </Link>
         </div>
-      {/* Featured */}
-      <section className="mt-12">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">Featured work</h2>
-            <p className="mt-2 text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-              A few recent pieces—see the gallery for more.
-            </p>
+      {/* Shop preview — a compact entry point into the product catalog;
+          the Gallery link above already covers custom-project inspiration. */}
+      {featuredProducts.length > 0 ? (
+        <section className="mt-12">
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Shop</h2>
+              <p className="mt-2 text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
+                Handmade cutting boards for your kitchen.
+              </p>
+            </div>
+
+            <Link href="/shop" className="ui-link text-sm hidden sm:inline">
+              View All Products →
+            </Link>
           </div>
 
-          <Link href="/gallery2" className="ui-link text-sm hidden sm:inline">
-            View full gallery →
-          </Link>
-        </div>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.slug} product={product} />
+            ))}
+          </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          {FEATURED_ITEMS.slice(0, 2).map((item) => (
-            <Link key={item.id} href={item.href} className="ui-card overflow-hidden group">
-              <div className="relative aspect-4/3">
-                <Image
-                  src={item.imageSrc}
-                  alt={item.title}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-                {item.tag ? (
-                  <div className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-xs text-white">
-                    {item.tag}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-lg font-semibold">{item.title}</h3>
-                  <span className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-                    View →
-                  </span>
-                </div>
-                <p className="mt-2 text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-                  {item.description}
-                </p>
-              </div>
+          <div className="mt-6 sm:hidden">
+            <Link href="/shop" className="ui-btn ui-btn-secondary w-full text-center">
+              View All Products
             </Link>
-          ))}
-        </div>
-
-        <div className="mt-6 sm:hidden">
-          <Link href="/gallery2" className="ui-btn ui-btn-secondary w-full text-center">
-            View full gallery
-          </Link>
-        </div>
-      </section>
+          </div>
+        </section>
+      ) : null}
 
       {/* Testimonials */}
       <section className="mt-12">

@@ -5,15 +5,6 @@ export type ValueProp = {
   description: string;
 };
 
-export type FeaturedItem = {
-  id: string;
-  title: string;
-  description: string;
-  imageSrc: string; // under /public
-  href: string;
-  tag?: string; // e.g. "Featured"
-};
-
 export type Testimonial = {
   quote: string;
   name: string;
@@ -38,24 +29,16 @@ export const VALUE_PROPS: ValueProp[] = [
   },
 ];
 
-export const FEATURED_ITEMS: FeaturedItem[] = [
-  {
-    id: "feat-1",
-    title: "Live Edge Coffee Table",
-    description: "Natural edge detail with a durable topcoat.",
-    imageSrc: "/images/projects/Live-Edge-Coffee-Table.webp",
-    href: "/gallery2",
-    tag: "New",
-  },
-  {
-    id: "feat-2",
-    title: "Custom Keepsake Boxes",
-    description: "Custom keepsake boxes for your treasured memories. Crafted with care and attention to detail, these boxes are designed to hold your most precious items.",
-    imageSrc: "/images/projects/Inscription-LD.webp",
-    href: "/gallery2",
-    tag: "Featured",
-  },
-  
+/**
+ * Which products from data/products.json appear in the homepage Shop preview,
+ * and in what order. Add/remove/reorder by editing these slugs — the actual
+ * title, price, image, and product-page link are all read live from the
+ * existing product catalog (via getProductBySlug), never duplicated here.
+ */
+export const FEATURED_PRODUCT_SLUGS: string[] = [
+  "large-endgrain-board",
+  "large-board-juice-groove",
+  "small-board",
 ];
 
 export const TESTIMONIALS: Testimonial[] = [
