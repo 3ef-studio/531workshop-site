@@ -25,6 +25,9 @@ export const HERO_SLIDE_IDS: string[] = [
 
 export type HeroSlide = {
   id: string;
+  /** The Gallery project's stable slug — used for the hero's "Start a Custom
+   *  Project" CTA (/contact?project=<slug>). Sourced from GALLERY_IMAGES. */
+  slug: string;
   src: string;
   alt: string;
   title?: string;
@@ -48,6 +51,7 @@ function resolveHeroSlides(): HeroSlide[] {
 
     slides.push({
       id: item.id,
+      slug: item.slug,
       src: item.src,
       alt: item.alt,
       title: item.title,

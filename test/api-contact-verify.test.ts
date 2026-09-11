@@ -29,6 +29,7 @@ const dbRow = {
   message: "Quote please",
   created_at: new Date().toISOString(),
   verified: false,
+  project_context: null,
 };
 
 /** Program client.query: SELECT returns `selectRows`, everything else returns []. */
@@ -91,5 +92,66 @@ describe("GET /api/contact/verify", () => {
     h.query.mockRejectedValueOnce(new Error("db exploded"));
     const res = await get("?token=validtoken");
     expect(res.status).toBe(500);
+  });
+});
+
+describe("GET /api/contact/verify — project context in the internal email", () => {
+  it("includes gallery/project details in the notification email when present", async () => {
+    programQuery([
+      {
+        ...dbRow,
+        project_context: {
+          gallerySlug: "puzzle-dining-table",
+          galleryTitle: "Puzzle Dining Table",
+          galleryCategory: "tables",
+          projectType: "tables",
+          dimensions: "6' long x 3' wide",
+          timeframe: "3-6-months",
+        },
+      },
+    ]);
+
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).toContain("Inspired by:");
+    expect(html).toContain("Puzzle Dining Table");
+    expect(html).toContain("Category:");
+    expect(html).toContain("Tables");
+    expect(html).toContain("Project type:");
+    expect(html).toContain("Approx. dimensions:");
+    expect(html).toContain("6&#39; long x 3&#39; wide"); // apostrophes are HTML-escaped
+    expect(html).toContain("Timeframe:");
+    expect(html).toContain("Within 3");
+  });
+
+  it("omits the project context block entirely for a normal, non-Gallery inquiry", async () => {
+    programQuery([{ ...dbRow, project_context: null }]);
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).not.toContain("Inspired by:");
+    expect(html).not.toContain("Approx. dimensions:");
+  });
+
+  it("only renders the fields that are actually present", async () => {
+    programQuery([{ ...dbRow, project_context: { dimensions: "6ft x 3ft" } }]);
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).toContain("Approx. dimensions:");
+    expect(html).not.toContain("Inspired by:");
+    expect(html).not.toContain("Timeframe:");
+  });
+
+  it("escapes HTML in the free-text dimensions field before emailing it", async () => {
+    programQuery([
+      { ...dbRow, project_context: { dimensions: `<img src=x onerror=alert(1)>` } },
+    ]);
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).not.toContain("<img src=x");
+    expect(html).toContain("&lt;img");
   });
 });

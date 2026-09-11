@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { Pool } from "pg";
 import { Resend } from "resend";
 import crypto from "crypto";
+import { getCategoryLabel, isGalleryCategory } from "@/lib/gallery-data";
+import { getProjectTypeLabel, getTimeframeLabel } from "@/lib/contactOptions";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
@@ -14,6 +16,62 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+type ProjectContext = {
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryCategory?: string;
+  projectType?: string;
+  dimensions?: string;
+  timeframe?: string;
+};
+
+/** Minimal HTML-escaping for the new free-text/derived fields this route adds. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Renders the "project context" block for the internal notification email.
+ * Only includes lines that actually have a value — never invents content.
+ */
+function renderProjectContext(raw: unknown): string {
+  if (!raw || typeof raw !== "object") return "";
+  const ctx = raw as ProjectContext;
+
+  const lines: string[] = [];
+
+  if (ctx.galleryTitle) {
+    lines.push(`<strong>Inspired by:</strong> ${escapeHtml(ctx.galleryTitle)}`);
+  }
+  if (ctx.galleryCategory && isGalleryCategory(ctx.galleryCategory)) {
+    lines.push(`<strong>Category:</strong> ${escapeHtml(getCategoryLabel(ctx.galleryCategory))}`);
+  }
+  if (ctx.projectType) {
+    const label = getProjectTypeLabel(ctx.projectType);
+    if (label) lines.push(`<strong>Project type:</strong> ${escapeHtml(label)}`);
+  }
+  if (ctx.dimensions) {
+    lines.push(`<strong>Approx. dimensions:</strong> ${escapeHtml(ctx.dimensions)}`);
+  }
+  if (ctx.timeframe) {
+    const label = getTimeframeLabel(ctx.timeframe);
+    if (label) lines.push(`<strong>Timeframe:</strong> ${escapeHtml(label)}`);
+  }
+
+  if (lines.length === 0) return "";
+
+  return `
+    <div style="margin:0 0 16px;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa;">
+      ${lines.map((l) => `<p style="margin:0 0 6px;">${l}</p>`).join("\n")}
+    </div>
+  `;
 }
 
 export async function GET(req: Request) {
@@ -44,6 +102,7 @@ export async function GET(req: Request) {
         message: string | null;
         created_at: string;
         verified: boolean;
+        project_context: unknown;
       }>(
         `
         SELECT
@@ -57,7 +116,8 @@ export async function GET(req: Request) {
           l.phone,
           l.message,
           l.created_at,
-          l.verified
+          l.verified,
+          l.project_context
         FROM app.email_verification_tokens evt
         JOIN app.leads l ON l.id = evt.lead_id
         WHERE evt.token_hash = $1
@@ -108,6 +168,8 @@ export async function GET(req: Request) {
         const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
         const subjectName = name ? ` (${name})` : "";
 
+        const projectContextHtml = renderProjectContext(row.project_context);
+
         await resend.emails.send({
           from,
           to,
@@ -117,8 +179,9 @@ export async function GET(req: Request) {
               <h2 style="margin:0 0 12px;">New verified inquiry</h2>
               <p style="margin:0 0 8px;"><strong>Name:</strong> ${name || "—"}</p>
               <p style="margin:0 0 8px;"><strong>Email:</strong> ${row.email}</p>
-              <p style="margin:0 0 8px;"><strong>Phone:</strong> ${row.phone || "—"}</p>
-              <p style="margin:12px 0 6px;"><strong>Message:</strong></p>
+              <p style="margin:0 0 16px;"><strong>Phone:</strong> ${row.phone || "—"}</p>
+              ${projectContextHtml}
+              <p style="margin:0 0 6px;"><strong>Customer message:</strong></p>
               <div style="padding:12px;border:1px solid #ddd;border-radius:12px;white-space:pre-wrap;">
                 ${row.message || "—"}
               </div>

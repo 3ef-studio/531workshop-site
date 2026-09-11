@@ -168,14 +168,18 @@ export default function Hero() {
                     (still natural-width, never mid-word) if they don't both fit. */}
                 <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
                   <Link
-                    href="/gallery2"
+                    href="/gallery"
                     className="whitespace-nowrap rounded-2xl bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:opacity-90 sm:px-5 sm:py-3"
                   >
                     View Our Work
                   </Link>
 
                   <Link
-                    href="/contact"
+                    href={
+                      activeSlide?.slug
+                        ? `/contact?project=${activeSlide.slug}`
+                        : "/contact"
+                    }
                     className="whitespace-nowrap rounded-2xl border border-white/70 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 sm:px-5 sm:py-3"
                   >
                     Start a Custom Project

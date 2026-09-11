@@ -3,6 +3,7 @@ import {
   validateContactForm,
   type ContactFormValues,
 } from "@/lib/contactValidation";
+import { MAX_DIMENSIONS_LENGTH } from "@/lib/contactOptions";
 
 const valid: ContactFormValues = {
   firstName: "Jane",
@@ -10,6 +11,9 @@ const valid: ContactFormValues = {
   email: "jane@example.com",
   phone: "",
   message: "I would like a quote for a walnut dining table, roughly 72 by 36 inches.",
+  projectType: "",
+  dimensions: "",
+  timeframe: "",
 };
 
 describe("validateContactForm", () => {
@@ -48,5 +52,19 @@ describe("validateContactForm", () => {
     expect(
       validateContactForm({ ...valid, message: "x".repeat(4001) }).message,
     ).toBe("Message is too long.");
+  });
+
+  it("treats project type, dimensions, and timeframe as fully optional", () => {
+    expect(validateContactForm(valid)).toEqual({});
+    expect(
+      validateContactForm({ ...valid, projectType: "tables", dimensions: "6' x 3'", timeframe: "flexible" }),
+    ).toEqual({});
+  });
+
+  it("bounds the free-text dimensions field", () => {
+    expect(validateContactForm({ ...valid, dimensions: "6' long x 3' wide" }).dimensions).toBeUndefined();
+    expect(
+      validateContactForm({ ...valid, dimensions: "x".repeat(MAX_DIMENSIONS_LENGTH + 1) }).dimensions,
+    ).toBeTruthy();
   });
 });

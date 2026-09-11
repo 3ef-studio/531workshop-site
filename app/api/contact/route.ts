@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { Pool } from "pg";
 import { Resend } from "resend";
 import crypto from "crypto";
+import { findGalleryProjectBySlug } from "@/lib/gallery-data";
+import { isProjectType, isTimeframe, MAX_DIMENSIONS_LENGTH } from "@/lib/contactOptions";
 
 type ContactPayload = {
   firstName?: string;
@@ -11,7 +13,52 @@ type ContactPayload = {
   email?: string;
   phone?: string;
   message?: string;
+  /** Optional project context. Only the slug is trusted from the client —
+   *  title/category are always re-derived server-side from Gallery data. */
+  projectSlug?: string;
+  projectType?: string;
+  dimensions?: string;
+  timeframe?: string;
 };
+
+/**
+ * Structured project context stored alongside a lead. Built entirely
+ * server-side: gallery* fields come from looking up the submitted slug
+ * against the trusted Gallery catalog (never from client-supplied title/
+ * category), and projectType/timeframe are validated against known values.
+ * Only populated keys are included — no empty-string clutter.
+ */
+function buildProjectContext(body: ContactPayload): Record<string, string> | null {
+  const context: Record<string, string> = {};
+
+  if (body.projectSlug) {
+    const item = findGalleryProjectBySlug(body.projectSlug.trim());
+    if (item) {
+      context.gallerySlug = item.slug;
+      context.galleryTitle = item.title ?? item.alt;
+      context.galleryCategory = item.category;
+    }
+    // An unknown/stale slug is silently ignored — the submission still
+    // succeeds as a normal inquiry.
+  }
+
+  const projectType = (body.projectType || "").trim();
+  if (projectType && isProjectType(projectType)) {
+    context.projectType = projectType;
+  }
+
+  const dimensions = (body.dimensions || "").trim().slice(0, MAX_DIMENSIONS_LENGTH);
+  if (dimensions) {
+    context.dimensions = dimensions;
+  }
+
+  const timeframe = (body.timeframe || "").trim();
+  if (timeframe && isTimeframe(timeframe)) {
+    context.timeframe = timeframe;
+  }
+
+  return Object.keys(context).length > 0 ? context : null;
+}
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
@@ -63,6 +110,7 @@ export async function POST(req: Request) {
     }
 
     const email = normalizeEmail(emailRaw);
+    const projectContext = buildProjectContext(body);
 
     const source = "contact";
     const referer = req.headers.get("referer") || undefined;
@@ -80,17 +128,30 @@ export async function POST(req: Request) {
       await client.query("BEGIN");
 
       // Insert the lead (unverified)
+      // NOTE: requires `ALTER TABLE app.leads ADD COLUMN project_context JSONB;`
+      // in the target database — see docs note in this file's PR/commit.
       const leadRes = await client.query<{
         id: string;
       }>(
         `
         INSERT INTO app.leads
-          (first_name, last_name, email, phone, message, verified, source, referer, ip, user_agent)
+          (first_name, last_name, email, phone, message, verified, source, referer, ip, user_agent, project_context)
         VALUES
-          ($1, $2, $3, $4, $5, FALSE, $6, $7, $8, $9)
+          ($1, $2, $3, $4, $5, FALSE, $6, $7, $8, $9, $10)
         RETURNING id
         `,
-        [firstName || null, lastName || null, email, phone || null, message, source, referer || null, ip || null, userAgent || null]
+        [
+          firstName || null,
+          lastName || null,
+          email,
+          phone || null,
+          message,
+          source,
+          referer || null,
+          ip || null,
+          userAgent || null,
+          projectContext ? JSON.stringify(projectContext) : null,
+        ]
       );
 
       const leadId = leadRes.rows[0]?.id;

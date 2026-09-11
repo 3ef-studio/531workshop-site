@@ -88,6 +88,85 @@ describe("POST /api/contact — success path (mocked DB + Resend)", () => {
   });
 });
 
+describe("POST /api/contact — project context", () => {
+  function leadInsertParams() {
+    const call = h.query.mock.calls.find((c) => /INSERT INTO app\.leads/i.test(String(c[0])));
+    return call?.[1] as unknown[] | undefined;
+  }
+
+  it("resolves a valid Gallery slug server-side and stores derived title/category", async () => {
+    const res = await post({ ...validBody, projectSlug: "live-edge-coffee-table" });
+    expect(res.status).toBe(200);
+
+    const params = leadInsertParams();
+    const stored = JSON.parse(params?.[9] as string);
+    expect(stored).toMatchObject({
+      gallerySlug: "live-edge-coffee-table",
+      galleryTitle: "Live Edge Coffee Table",
+      galleryCategory: "tables",
+    });
+  });
+
+  it("ignores client-supplied title/category and re-derives from the slug alone", async () => {
+    // The payload type has no title/category field at all, but a direct API
+    // caller could still smuggle one in the JSON body — it must be ignored.
+    await post({
+      ...validBody,
+      projectSlug: "live-edge-coffee-table",
+      projectTitle: "Totally Fake Title",
+      galleryCategory: "commercial-projects",
+    });
+
+    const stored = JSON.parse(leadInsertParams()?.[9] as string);
+    expect(stored.galleryTitle).toBe("Live Edge Coffee Table");
+    expect(stored.galleryCategory).toBe("tables");
+  });
+
+  it("fails gracefully on an unknown/stale slug — submission still succeeds with no gallery context", async () => {
+    const res = await post({ ...validBody, projectSlug: "this-project-does-not-exist" });
+    expect(res.status).toBe(200);
+
+    const params = leadInsertParams();
+    expect(params?.[9]).toBeNull();
+  });
+
+  it("stores projectType, dimensions, and timeframe when valid", async () => {
+    await post({
+      ...validBody,
+      projectType: "tables",
+      dimensions: "6' long x 3' wide",
+      timeframe: "3-6-months",
+    });
+
+    const stored = JSON.parse(leadInsertParams()?.[9] as string);
+    expect(stored).toMatchObject({
+      projectType: "tables",
+      dimensions: "6' long x 3' wide",
+      timeframe: "3-6-months",
+    });
+  });
+
+  it("silently drops an invalid projectType/timeframe rather than rejecting the request", async () => {
+    const res = await post({ ...validBody, projectType: "spaceship", timeframe: "yesterday" });
+    expect(res.status).toBe(200);
+
+    const params = leadInsertParams();
+    expect(params?.[9]).toBeNull();
+  });
+
+  it("truncates an over-long dimensions value instead of rejecting the request", async () => {
+    await post({ ...validBody, dimensions: "x".repeat(500) });
+    const stored = JSON.parse(leadInsertParams()?.[9] as string);
+    expect(stored.dimensions.length).toBe(200);
+  });
+
+  it("stores no project_context at all for a normal inquiry with no project fields", async () => {
+    await post(validBody);
+    const params = leadInsertParams();
+    expect(params?.[9]).toBeNull();
+  });
+});
+
 describe("POST /api/contact — failure behavior", () => {
   it("still returns ok:true when EMAIL_FROM is missing and does NOT call Resend (documents TECHNICAL_DEBT A4)", async () => {
     vi.stubEnv("EMAIL_FROM", "");

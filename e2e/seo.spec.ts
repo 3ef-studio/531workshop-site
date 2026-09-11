@@ -12,7 +12,9 @@ test.describe("D1 — per-route canonical URLs", () => {
     ["/", "/"],
     ["/about", "/about"],
     ["/faq", "/faq"],
-    ["/gallery2", "/gallery2"],
+    ["/gallery", "/gallery"],
+    ["/gallery/tables", "/gallery/tables"],
+    ["/gallery/tables/live-edge-coffee-table", "/gallery/tables/live-edge-coffee-table"],
     ["/shop", "/shop"],
     ["/contact", "/contact"],
     ["/shop/small-board", "/shop/small-board"],
@@ -28,7 +30,7 @@ test.describe("D1 — per-route canonical URLs", () => {
   }
 
   test("interior pages no longer canonicalize to the homepage", async ({ page }) => {
-    for (const route of ["/about", "/faq", "/gallery2", "/shop", "/contact", "/shop/small-board"]) {
+    for (const route of ["/about", "/faq", "/gallery", "/shop", "/contact", "/shop/small-board"]) {
       await page.goto(route);
       const href = await canonicalHref(page);
       expect(new URL(href!).pathname, `${route} must not point at "/"`).not.toBe("/");
@@ -39,6 +41,18 @@ test.describe("D1 — per-route canonical URLs", () => {
     await page.goto("/shop/large-endgrain-board");
     const href = await canonicalHref(page);
     expect(new URL(href!).pathname).toBe("/shop/large-endgrain-board");
+  });
+
+  test("a second gallery category and project page emit their own canonicals", async ({
+    page,
+  }) => {
+    await page.goto("/gallery/cutting-boards");
+    expect(new URL((await canonicalHref(page))!).pathname).toBe("/gallery/cutting-boards");
+
+    await page.goto("/gallery/cutting-boards/checkerboard-cutting-board");
+    expect(new URL((await canonicalHref(page))!).pathname).toBe(
+      "/gallery/cutting-boards/checkerboard-cutting-board"
+    );
   });
 
   test("the ?confirmed query variant of /contact still canonicalizes to /contact", async ({
@@ -60,15 +74,27 @@ test.describe("D2 — sitemap.xml and robots.txt", () => {
     expect(res.headers()["content-type"]).toContain("xml");
 
     const body = await res.text();
-    for (const path of ["/about", "/faq", "/gallery2", "/shop", "/contact"]) {
+    for (const path of ["/about", "/faq", "/gallery", "/shop", "/contact"]) {
       expect(body).toContain(`<loc>http://localhost:3000${path}</loc>`);
     }
     // product detail routes derived from data/products.json
     expect(body).toContain("<loc>http://localhost:3000/shop/small-board</loc>");
     expect(body).toContain("<loc>http://localhost:3000/shop/large-endgrain-board</loc>");
+    // gallery category + project routes derived from lib/gallery-data.ts
+    expect(body).toContain("<loc>http://localhost:3000/gallery/tables</loc>");
+    expect(body).toContain(
+      "<loc>http://localhost:3000/gallery/tables/live-edge-coffee-table</loc>"
+    );
     // excluded
     expect(body).not.toContain("/gallery1");
+    expect(body).not.toContain("/gallery2");
     expect(body).not.toContain("/api/");
+  });
+
+  test("/gallery2 permanently redirects to /gallery", async ({ request }) => {
+    const res = await request.get("/gallery2", { maxRedirects: 0 });
+    expect([301, 308]).toContain(res.status());
+    expect(res.headers()["location"]).toContain("/gallery");
   });
 
   test("robots.txt is generated and references the sitemap", async ({ request }) => {

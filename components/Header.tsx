@@ -86,7 +86,7 @@ export default function Header() {
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-2">
           <NavItem href="/shop">Shop</NavItem>
-          <NavItem href="/gallery2">Custom Gallery</NavItem>
+          <NavItem href="/gallery">Custom Gallery</NavItem>
           <NavItem href="/about">About</NavItem>
           <NavItem href="/contact">Contact</NavItem>
           <NavItem href="/faq">FAQ</NavItem>
@@ -117,7 +117,7 @@ export default function Header() {
             </Link>
             <Link
               onClick={() => setOpen(false)}
-              href="/gallery2"
+              href="/gallery"
               className="px-3 py-2 rounded-xl text-sm hover:bg-card/60"
             >
               Custom Gallery

@@ -1,7 +1,33 @@
 // lib/gallery-data.ts
 
+export type GalleryCategory =
+  | "tables"
+  | "cabinets"
+  | "specialty-projects"
+  | "commercial-projects"
+  | "cutting-boards";
+
 export type GalleryImage = {
+  /**
+   * Stable internal identifier. Do not rename or reuse — lib/hero-data.ts
+   * references gallery items by `id` for the homepage hero rotation.
+   */
   id: string;
+
+  /**
+   * Stable, human-readable, URL-safe identifier used for routing
+   * (/gallery/[category]/[slug]) and, later, for passing project context to
+   * the contact flow (e.g. /contact?project=<slug>). Treat as a public URL
+   * once published — avoid renaming after the page has shipped.
+   */
+  slug: string;
+
+  /**
+   * Single primary category. Drives which /gallery/[category] page the item
+   * appears on and its canonical project URL. Use `tags` below for any
+   * secondary/cross-cutting classification instead of adding more categories.
+   */
+  category: GalleryCategory;
 
   /**
    * Path under /public (e.g., "/images/projects/dining-table-01.webp")
@@ -58,6 +84,8 @@ export type GalleryImage = {
 export const GALLERY_IMAGES: GalleryImage[] = [
   {
     id: "p07",
+    slug: "epoxy-river-coffee-table-sycamore",
+    category: "tables",
     src: "/images/projects/Epoxy-River-Coffee-Table-Sycamore.webp",
     alt: "Custom sycamore epoxy river coffee table with red tinted epoxy and black metal legs.",
     title: "Epoxy River Coffee Table Sycamore",
@@ -71,6 +99,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p02",
+    slug: "barnwood-beam-console-table",
+    category: "tables",
     src: "/images/projects/Barnwood-Beam-Console-table.webp",
     alt: "Console table made from reclaimed hardwood barn beams from Western Illinois.",
     title: "Barnwood Beam Console Table",
@@ -81,6 +111,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p31",
+    slug: "keepsake-boxes",
+    category: "specialty-projects",
     src: "/images/projects/Keepsake-boxes.webp",
     alt: "Solid mahogany keepsake boxes finished with tung oil.",
     title: "Keepsake Boxes",
@@ -91,6 +123,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p03",
+    slug: "bedroom-remodel",
+    category: "specialty-projects",
     src: "/images/projects/Bedroom-remodel.webp",
     alt: "Bedroom remodel with red oak queen bed frame, side tables, shelf risers, and headboard.",
     title: "Bedroom Remodel",
@@ -101,6 +135,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p04",
+    slug: "bookshelf-unit",
+    category: "specialty-projects",
     src: "/images/projects/Bookshelf-unit.webp",
     alt: "Wall-spanning red oak bookshelf unit stained to match existing furniture.",
     title: "Bookshelf Unit",
@@ -111,6 +147,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p06",
+    slug: "checkerboard-cutting-board",
+    category: "cutting-boards",
     src: "/images/projects/Checkerboard-cutting-board.webp",
     alt: "Maple and walnut checkerboard cutting board with juice groove.",
     title: "Checkerboard Cutting Board",
@@ -121,6 +159,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p13",
+    slug: "living-room-cabinet",
+    category: "cabinets",
     src: "/images/projects/Living-Room-Cabinet.webp",
     alt: "Living room storage cabinet with live edge cherry slab top and custom base.",
     title: "Living Room Cabinet",
@@ -131,6 +171,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p08",
+    slug: "epoxy-river-coffee-table-walnut",
+    category: "tables",
     src: "/images/projects/Epoxy-River-Coffee-Table-Walnut.webp",
     alt: "Custom walnut epoxy river coffee table with blue tinted epoxy and black metal legs.",
     title: "Epoxy River Coffee Table Walnut",
@@ -142,6 +184,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p09",
+    slug: "fireplace-tv-stand",
+    category: "cabinets",
     src: "/images/projects/Fireplace-TV-Stand.webp",
     alt: "Custom maple fireplace and TV stand with storage for AV equipment.",
     title: "Fireplace & TV Stand",
@@ -152,6 +196,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p10",
+    slug: "front-room-coat-storage",
+    category: "cabinets",
     src: "/images/projects/Front-Room-Coat-Storage.webp",
     alt: "Front room coat storage with solid red oak board and batten.",
     title: "Front Room Coat Storage",
@@ -162,6 +208,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p5841",
+    slug: "baptismal-font",
+    category: "commercial-projects",
     src: "/images/projects/IMG_5841.webp",
     alt: "Custom baptismal font.",
     title: "Baptismal font",
@@ -171,6 +219,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p5857",
+    slug: "display-cabinet",
+    category: "cabinets",
     src: "/images/projects/IMG_5857.webp",
     alt: "Display Cabinet.",
     title: "Display Cabinet",
@@ -180,6 +230,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p004",
+    slug: "hickory-coffee-table",
+    category: "tables",
     src: "/images/projects/Hickory-coffee-table.webp",
     alt: "Custom hickory coffee table with natural wood grain.",
     title: "Hickory Coffee Table",
@@ -188,6 +240,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p11",
+    slug: "garage-bar",
+    category: "specialty-projects",
     src: "/images/projects/Garage-Bar.webp",
     alt: "Custom garage bar woodworking project with storage and counter space.",
     title: "Garage Bar",
@@ -195,6 +249,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p47",
+    slug: "inscription",
+    category: "specialty-projects",
     src: "/images/projects/Inscription-LD.webp",
     alt: "Laser engraved handwriting inscription preserved in a custom memory box.",
     title: "Inscription",
@@ -207,6 +263,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p12",
+    slug: "live-edge-coffee-table",
+    category: "tables",
     src: "/images/projects/Live-Edge-Coffee-Table.webp",
     alt: "Custom live edge coffee table showing the natural edge of the wood slab.",
     title: "Live Edge Coffee Table",
@@ -214,6 +272,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p005",
+    slug: "baptism-fonts",
+    category: "commercial-projects",
     src: "/images/projects/Fonts.webp",
     alt: "Red oak baptism fonts built for a church supply client and prepared for final finishing.",
     title: "Baptism Fonts",
@@ -224,6 +284,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p14",
+    slug: "puzzle-dining-table",
+    category: "tables",
     src: "/images/projects/Puzzle-Dining-Table.webp",
     alt: "Custom dining table top with hidden puzzle table functionality.",
     title: "Puzzle Dining Table",
@@ -233,6 +295,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p15",
+    slug: "wine-table",
+    category: "tables",
     src: "/images/projects/Wine-Table.webp",
     alt: "Custom wine table with bottle storage designed for a unique home space.",
     title: "Wine Table",
@@ -242,6 +306,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: "p16",
+    slug: "stools",
+    category: "specialty-projects",
     src: "/images/projects/Stools.webp",
     alt: "Small custom wooden stools for sitting while putting on or taking off shoes.",
     title: "Stools",
@@ -249,9 +315,90 @@ export const GALLERY_IMAGES: GalleryImage[] = [
       "Ever wished you had a convenient place to sit down and put on or take off your shoes? These stools are the perfect size to make your space more functional. Would you rather have a bench? We can do that too.",
     tags: ["stools", "bench", "entryway seating", "custom seating", "functional furniture"],
   },
+
+  // Cutting Boards — additional examples reusing existing Shop product photography
+  // (see data/products.json). These are craftsmanship examples only: no price,
+  // no purchase link. Update/replace if the client prefers different examples.
+  {
+    id: "cb-endgrain-walnut",
+    slug: "large-end-grain-cutting-board",
+    category: "cutting-boards",
+    src: "/images/projects/Walnut-End-Grain-Cutting-Board.webp",
+    alt: "Handmade walnut end-grain cutting board with chamfered edges.",
+    title: "Large End-Grain Cutting Board",
+    description:
+      "Hand-built end-grain cutting board in walnut. End-grain construction rotates the wood so the blade cuts into the end of the grain, making the board structurally stronger and gentler on knife edges. Finished with food-grade mineral and finishing oils.",
+    materials: ["Walnut"],
+    tags: ["cutting board", "end grain", "walnut", "kitchen"],
+  },
+  {
+    id: "cb-juice-groove",
+    slug: "large-cutting-board-with-juice-groove",
+    category: "cutting-boards",
+    src: "/images/projects/Large-cutting-board-with-juice-groove.webp",
+    alt: "Handmade hardwood cutting board with a built-in juice groove.",
+    title: "Large Cutting Board with Juice Groove",
+    description:
+      "A handmade hardwood cutting board with a built-in juice groove to catch runoff when carving meats. Finished with food-grade mineral and finishing oils — no stains or dyes, just the natural color of the wood.",
+    tags: ["cutting board", "juice groove", "kitchen"],
+  },
+  {
+    id: "cb-round-handle",
+    slug: "large-cutting-board-with-round-handle",
+    category: "cutting-boards",
+    src: "/images/projects/Cutting-board-with-circle-handle.webp",
+    alt: "Handmade hardwood cutting board with a round carrying handle.",
+    title: "Large Cutting Board with Round Handle",
+    description:
+      "A handmade hardwood cutting board with a rounded handle cut into one end for easy carrying. Finished with food-grade mineral and finishing oils.",
+    tags: ["cutting board", "round handle", "kitchen"],
+  },
 ];
 
 /**
  * Convenience export for featured images (optional).
  */
 export const FEATURED_GALLERY_IMAGES = GALLERY_IMAGES.filter((img) => img.featured);
+
+/**
+ * Category definitions in display order. This is the single place that maps
+ * a category value to its customer-facing label — category pages, the
+ * /gallery landing page's category navigation, and metadata all read from
+ * this list rather than re-declaring the label elsewhere.
+ */
+export const CATEGORIES: { value: GalleryCategory; label: string }[] = [
+  { value: "tables", label: "Tables" },
+  { value: "cabinets", label: "Cabinets" },
+  { value: "specialty-projects", label: "Specialty Projects" },
+  { value: "commercial-projects", label: "Commercial Projects" },
+  { value: "cutting-boards", label: "Cutting Boards" },
+];
+
+export function isGalleryCategory(value: string): value is GalleryCategory {
+  return CATEGORIES.some((c) => c.value === value);
+}
+
+export function getCategoryLabel(category: GalleryCategory): string {
+  return CATEGORIES.find((c) => c.value === category)?.label ?? category;
+}
+
+export function getGalleryItemsByCategory(category: GalleryCategory): GalleryImage[] {
+  return GALLERY_IMAGES.filter((item) => item.category === category);
+}
+
+export function getGalleryItemBySlug(
+  category: GalleryCategory,
+  slug: string
+): GalleryImage | undefined {
+  return GALLERY_IMAGES.find((item) => item.category === category && item.slug === slug);
+}
+
+/**
+ * Look up a gallery item by slug alone (category unknown), e.g. for
+ * /contact?project=<slug>, where only the slug travels in the URL. Slugs are
+ * unique across the whole catalog, so this is unambiguous. Returns undefined
+ * for an unknown/stale slug — callers should fail gracefully, not error.
+ */
+export function findGalleryProjectBySlug(slug: string): GalleryImage | undefined {
+  return GALLERY_IMAGES.find((item) => item.slug === slug);
+}

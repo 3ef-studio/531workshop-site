@@ -3,12 +3,18 @@
 // Client-side validation rules for the contact form. Extracted verbatim from
 // components/ContactForm.tsx so the rules can be unit-tested. Behavior is unchanged.
 
+import { MAX_DIMENSIONS_LENGTH } from "./contactOptions";
+
 export type ContactFormValues = {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   message: string;
+  /** Optional project context — see lib/contactOptions.ts for valid values. */
+  projectType: string;
+  dimensions: string;
+  timeframe: string;
 };
 
 export type ContactFormErrors = Partial<Record<keyof ContactFormValues, string>>;
@@ -36,6 +42,11 @@ export function validateContactForm(values: ContactFormValues): ContactFormError
   if (!msg) e.message = "Message is required.";
   else if (msg.length < 20) e.message = "Please share a few details (at least 20 characters).";
   else if (msg.length > 4000) e.message = "Message is too long.";
+
+  // dimensions optional — just bounded, no format requirement
+  if (values.dimensions.trim().length > MAX_DIMENSIONS_LENGTH) {
+    e.dimensions = `Please keep this under ${MAX_DIMENSIONS_LENGTH} characters.`;
+  }
 
   return e;
 }
