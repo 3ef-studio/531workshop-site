@@ -235,7 +235,9 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     src: "/images/projects/Hickory-coffee-table.webp",
     alt: "Custom hickory coffee table with natural wood grain.",
     title: "Hickory Coffee Table",
-    materials: ["Hickory"],
+    description:
+      "This coffee table is made from hickory, an affordable hardwood that is ultra durable. Custom sized to fit a small living room. Paired with black hammertone metal legs.",
+    materials: ["Hickory", "Metal"],
     tags: ["coffee table", "hickory", "custom furniture"],
   },
   {
@@ -245,6 +247,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     src: "/images/projects/Garage-Bar.webp",
     alt: "Custom garage bar woodworking project with storage and counter space.",
     title: "Garage Bar",
+    description:
+      "Custom sized and made from simple, durable framing lumber, built to enjoy garage parties for any occasion.",
     tags: ["garage bar", "bar", "custom woodworking", "storage"],
   },
   {
@@ -268,6 +272,9 @@ export const GALLERY_IMAGES: GalleryImage[] = [
     src: "/images/projects/Live-Edge-Coffee-Table.webp",
     alt: "Custom live edge coffee table showing the natural edge of the wood slab.",
     title: "Live Edge Coffee Table",
+    description:
+      "This coffee table is made from one walnut live edge slab and paired with black hammertone metal legs.",
+    materials: ["Walnut", "Metal"],
     tags: ["coffee table", "live edge", "wood slab", "custom furniture"],
   },
   {
