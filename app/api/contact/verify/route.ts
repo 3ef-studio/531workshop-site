@@ -27,7 +27,11 @@ type ProjectContext = {
   timeframe?: string;
 };
 
-/** Minimal HTML-escaping for the new free-text/derived fields this route adds. */
+/**
+ * HTML-escaping for every user-supplied or free-text value rendered into the
+ * internal notification email (name, email, phone, message, dimensions).
+ * Trusted static labels/markup are never passed through this.
+ */
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -38,8 +42,51 @@ function escapeHtml(value: string): string {
 }
 
 /**
+ * Presentation-only phone formatting for the internal email. Never touches
+ * the stored value. Recognizes a plain 10-digit US number, or an 11-digit
+ * number with a leading US country code (1). Anything else is returned
+ * trimmed but otherwise as entered, rather than guessed at.
+ */
+function formatPhoneForDisplay(rawPhone: string): string {
+  const trimmed = rawPhone.trim();
+  const digits = trimmed.replace(/\D/g, "");
+
+  let tenDigits: string | null = null;
+  if (digits.length === 10) {
+    tenDigits = digits;
+  } else if (digits.length === 11 && digits.startsWith("1")) {
+    tenDigits = digits.slice(1);
+  }
+
+  if (!tenDigits) return trimmed;
+  return `(${tenDigits.slice(0, 3)}) ${tenDigits.slice(3, 6)}-${tenDigits.slice(6)}`;
+}
+
+/**
+ * Formats a stored (UTC) timestamp for the business's local timezone.
+ * Uses the IANA tz database via Intl so DST is handled correctly — never
+ * calculated manually. Only affects display; the stored timestamp is
+ * untouched.
+ */
+function formatBusinessTimestamp(dateLike: string): string {
+  const date = new Date(dateLike);
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
+}
+
+/**
  * Renders the "project context" block for the internal notification email.
  * Only includes lines that actually have a value — never invents content.
+ * When the Gallery category and the customer-selected Project Type are the
+ * same underlying value, the separate Category line is suppressed (showing
+ * both would just repeat the same word twice).
  */
 function renderProjectContext(raw: unknown): string {
   if (!raw || typeof raw !== "object") return "";
@@ -50,9 +97,18 @@ function renderProjectContext(raw: unknown): string {
   if (ctx.galleryTitle) {
     lines.push(`<strong>Inspired by:</strong> ${escapeHtml(ctx.galleryTitle)}`);
   }
-  if (ctx.galleryCategory && isGalleryCategory(ctx.galleryCategory)) {
+
+  const categoryMatchesProjectType =
+    Boolean(ctx.galleryCategory) && ctx.galleryCategory === ctx.projectType;
+
+  if (
+    ctx.galleryCategory &&
+    isGalleryCategory(ctx.galleryCategory) &&
+    !categoryMatchesProjectType
+  ) {
     lines.push(`<strong>Category:</strong> ${escapeHtml(getCategoryLabel(ctx.galleryCategory))}`);
   }
+
   if (ctx.projectType) {
     const label = getProjectTypeLabel(ctx.projectType);
     if (label) lines.push(`<strong>Project type:</strong> ${escapeHtml(label)}`);
@@ -165,8 +221,18 @@ export async function GET(req: Request) {
       const from = process.env.EMAIL_FROM;
 
       if (to && from && process.env.RESEND_API_KEY) {
+        // Plain-text name for the subject line — never HTML-escaped, since a
+        // subject header isn't HTML and escaping it would show literal
+        // "&amp;"-style entities to the recipient's mail client.
         const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
         const subjectName = name ? ` (${name})` : "";
+
+        // Escaped, presentation-formatted values for the HTML body only.
+        const displayName = name ? escapeHtml(name) : "—";
+        const displayEmail = escapeHtml(row.email);
+        const displayPhone = row.phone ? escapeHtml(formatPhoneForDisplay(row.phone)) : "—";
+        const displayMessage = row.message ? escapeHtml(row.message.trim()) : "—";
+        const displayTimestamp = formatBusinessTimestamp(row.created_at);
 
         const projectContextHtml = renderProjectContext(row.project_context);
 
@@ -177,16 +243,14 @@ export async function GET(req: Request) {
           html: `
             <div style="font-family: ui-sans-serif, system-ui; line-height: 1.5;">
               <h2 style="margin:0 0 12px;">New verified inquiry</h2>
-              <p style="margin:0 0 8px;"><strong>Name:</strong> ${name || "—"}</p>
-              <p style="margin:0 0 8px;"><strong>Email:</strong> ${row.email}</p>
-              <p style="margin:0 0 16px;"><strong>Phone:</strong> ${row.phone || "—"}</p>
+              <p style="margin:0 0 8px;"><strong>Name:</strong> ${displayName}</p>
+              <p style="margin:0 0 8px;"><strong>Email:</strong> ${displayEmail}</p>
+              <p style="margin:0 0 16px;"><strong>Phone:</strong> ${displayPhone}</p>
               ${projectContextHtml}
               <p style="margin:0 0 6px;"><strong>Customer message:</strong></p>
-              <div style="padding:12px;border:1px solid #ddd;border-radius:12px;white-space:pre-wrap;">
-                ${row.message || "—"}
-              </div>
+              <div style="padding:12px;border:1px solid #ddd;border-radius:12px;white-space:pre-wrap;">${displayMessage}</div>
               <p style="margin-top:12px;color:#777;font-size:12px;">
-                Submitted: ${new Date(row.created_at).toLocaleString()}
+                Submitted: ${displayTimestamp}
               </p>
             </div>
           `,

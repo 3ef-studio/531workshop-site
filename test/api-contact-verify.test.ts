@@ -101,9 +101,9 @@ describe("GET /api/contact/verify — project context in the internal email", ()
       {
         ...dbRow,
         project_context: {
-          gallerySlug: "puzzle-dining-table",
+          gallerySlug: "keepsake-boxes",
           galleryTitle: "Puzzle Dining Table",
-          galleryCategory: "tables",
+          galleryCategory: "specialty-projects",
           projectType: "tables",
           dimensions: "6' long x 3' wide",
           timeframe: "3-6-months",
@@ -117,7 +117,7 @@ describe("GET /api/contact/verify — project context in the internal email", ()
     expect(html).toContain("Inspired by:");
     expect(html).toContain("Puzzle Dining Table");
     expect(html).toContain("Category:");
-    expect(html).toContain("Tables");
+    expect(html).toContain("Specialty Projects");
     expect(html).toContain("Project type:");
     expect(html).toContain("Approx. dimensions:");
     expect(html).toContain("6&#39; long x 3&#39; wide"); // apostrophes are HTML-escaped
@@ -153,5 +153,143 @@ describe("GET /api/contact/verify — project context in the internal email", ()
     const html = h.send.mock.calls[0][0].html as string;
     expect(html).not.toContain("<img src=x");
     expect(html).toContain("&lt;img");
+  });
+});
+
+describe("GET /api/contact/verify — Category vs Project Type redundancy", () => {
+  it("suppresses Category when it matches Project Type", async () => {
+    programQuery([
+      {
+        ...dbRow,
+        project_context: {
+          galleryTitle: "Live Edge Coffee Table",
+          galleryCategory: "tables",
+          projectType: "tables",
+        },
+      },
+    ]);
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).toContain("Inspired by:");
+    expect(html).toContain("Live Edge Coffee Table");
+    expect(html).not.toContain("Category:");
+    expect(html).toContain("Project type:");
+  });
+
+  it("shows both Category and Project Type when they differ", async () => {
+    programQuery([
+      {
+        ...dbRow,
+        project_context: {
+          galleryTitle: "Keepsake Boxes",
+          galleryCategory: "specialty-projects",
+          projectType: "tables",
+        },
+      },
+    ]);
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).toContain("Category:");
+    expect(html).toContain("Specialty Projects");
+    expect(html).toContain("Project type:");
+    expect(html).toContain("Tables");
+  });
+
+  it("shows Category alone when there's Gallery context but no selected Project Type", async () => {
+    programQuery([
+      {
+        ...dbRow,
+        project_context: { galleryTitle: "Garage Bar", galleryCategory: "specialty-projects" },
+      },
+    ]);
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).toContain("Category:");
+    expect(html).toContain("Specialty Projects");
+    expect(html).not.toContain("Project type:");
+  });
+
+  it("shows Project Type alone for a generic (non-Gallery) inquiry", async () => {
+    programQuery([{ ...dbRow, project_context: { projectType: "cabinets" } }]);
+    await get("?token=validtoken");
+
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).not.toContain("Category:");
+    expect(html).not.toContain("Inspired by:");
+    expect(html).toContain("Project type:");
+    expect(html).toContain("Cabinets");
+  });
+});
+
+describe("GET /api/contact/verify — phone formatting (presentation only)", () => {
+  it("formats a plain 10-digit US number", async () => {
+    programQuery([{ ...dbRow, phone: "3123637064" }]);
+    await get("?token=validtoken");
+    expect(h.send.mock.calls[0][0].html).toContain("(312) 363-7064");
+  });
+
+  it("formats an 11-digit number with a leading US country code", async () => {
+    programQuery([{ ...dbRow, phone: "13123637064" }]);
+    await get("?token=validtoken");
+    expect(h.send.mock.calls[0][0].html).toContain("(312) 363-7064");
+  });
+
+  it("leaves an unrecognized format as entered rather than mangling it", async () => {
+    programQuery([{ ...dbRow, phone: "+44 20 7946 0958" }]);
+    await get("?token=validtoken");
+    expect(h.send.mock.calls[0][0].html).toContain("+44 20 7946 0958");
+  });
+
+  it("shows an em dash when no phone was provided", async () => {
+    programQuery([{ ...dbRow, phone: null }]);
+    await get("?token=validtoken");
+    expect(h.send.mock.calls[0][0].html).toContain("<strong>Phone:</strong> —");
+  });
+});
+
+describe("GET /api/contact/verify — message rendering and escaping", () => {
+  it("trims leading/trailing whitespace but preserves internal line breaks", async () => {
+    programQuery([{ ...dbRow, message: "   Line one.\nLine two.   " }]);
+    await get("?token=validtoken");
+    const html = h.send.mock.calls[0][0].html as string;
+    // No stray whitespace between the container tag and the trimmed content.
+    expect(html).toContain(">Line one.\nLine two.<");
+  });
+
+  it("escapes HTML in the customer message rather than interpreting it", async () => {
+    programQuery([{ ...dbRow, message: `<script>alert("x")</script>` }]);
+    await get("?token=validtoken");
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).not.toContain("<script>alert");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("escapes name and phone consistently with the other fields", async () => {
+    programQuery([
+      { ...dbRow, first_name: "<b>Jane</b>", last_name: "O'Brien", phone: "<b>911</b>" },
+    ]);
+    await get("?token=validtoken");
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).not.toContain("<b>Jane</b>");
+    expect(html).toContain("&lt;b&gt;Jane&lt;/b&gt;");
+    expect(html).toContain("O&#39;Brien");
+    expect(html).not.toContain("<b>911</b>");
+  });
+});
+
+describe("GET /api/contact/verify — submitted timestamp", () => {
+  it("formats the timestamp in America/Chicago regardless of server timezone", async () => {
+    // September is Central Daylight Time (UTC-5) — 02:39 UTC -> 9:39 PM the previous day.
+    programQuery([{ ...dbRow, created_at: "2026-09-10T02:39:00.000Z" }]);
+    await get("?token=validtoken");
+    const html = h.send.mock.calls[0][0].html as string;
+    expect(html).toContain("September 9, 2026");
+    expect(html).toContain("9:39 PM");
+    expect(html).toContain("CDT");
+    // Not a raw/ambiguous UTC-looking timestamp.
+    expect(html).not.toContain("2026-09-10T02:39");
   });
 });
