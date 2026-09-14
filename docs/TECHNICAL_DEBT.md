@@ -18,9 +18,25 @@ Following a confirmed automated-spam wave (see `docs/CONTACT_SPAM_INVESTIGATION.
 `app/api/contact/route.ts` silently accepts-and-discards any submission that fills it — no
 DB write, no verification token, no Resend call. This targets the specific bot profile
 observed in the investigation (an unsophisticated tool with no evidence of avoiding hidden
-fields). **Rate limiting and CAPTCHA/Turnstile remain absent** — the investigation found
-the observed traffic came from ~15 distinct IPs (several via known Tor exit ranges) with
-low per-IP repetition, making simple per-IP rate limiting a weak fit for what was actually
+fields).
+
+**Known false-positive, fixed same day:** the honeypot originally shipped as a hidden text
+`<input>`, hidden via off-screen CSS positioning. Within hours of deploying, a real
+visitor's plain Chrome autofill (no password manager or extension involved) populated it,
+silently discarding a legitimate submission with no error shown to the user and no lead
+ever created. Chrome's form-fill-prediction targets text-like inputs regardless of
+on-screen visibility, so off-screen positioning alone doesn't defend against it. **Fixed**
+by changing the honeypot to a hidden `<select>` instead — browsers don't guess-fill
+arbitrary hidden dropdowns the way they do text fields, and a `<select>` still matches the
+one bot pattern actually observed (it always picked a dropdown's first non-blank option).
+The server-side check is unchanged (same "non-empty value = discard" logic regardless of
+input type). No automated test currently exercises real browser autofill behavior — this
+was caught by manual production testing, not the test suite; that's a gap worth being
+aware of if this technique is revisited again.
+
+**Rate limiting and CAPTCHA/Turnstile remain absent** — the investigation found the
+observed traffic came from ~15 distinct IPs (several via known Tor exit ranges) with low
+per-IP repetition, making simple per-IP rate limiting a weak fit for what was actually
 seen, and found no evidence the bot is sophisticated enough to require a CAPTCHA-grade
 challenge. Both remain explicit, evidence-gated Stage 2 options — see the investigation
 report's §7 for the staging rationale — not implemented here. `components/LeadForm.tsx`

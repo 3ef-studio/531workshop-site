@@ -276,11 +276,16 @@ required; email must match `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`; phone if present must
 digits; message 20–4000 chars; dimensions bounded but otherwise free-form. Errors show
 after blur or after a submit attempt, using accessible `aria-invalid`/`aria-describedby`
 wiring (`useId`-derived ids). On submit: POST `{...values, projectSlug, referenceId}` JSON
-to `/api/contact` — `referenceId` is a hidden honeypot field (visually hidden off-screen,
-`aria-hidden`, excluded from the tab order and from autocomplete guessing; always empty
-for a real visitor). Success → green "Check your email" banner using the server's
-`message`, form cleared. Failure → red banner with the server `error` or a generic
-message. Network error → "Network error. Please try again."
+to `/api/contact` — `referenceId` is a hidden honeypot **`<select>`** (not a text input;
+visually hidden off-screen, `aria-hidden`, excluded from the tab order), deliberately
+chosen over a text field after a 2026-09-14 false positive where Chrome's own autofill
+populated an earlier text-input honeypot for a legitimate visitor — see
+`TECHNICAL_DEBT.md` A1. Browsers don't guess-fill arbitrary hidden dropdowns the way they
+do text fields, so it stays at its blank default for a real visitor, while still matching
+the one bot pattern actually observed (always picking a `<select>`'s first non-blank
+option). Success → green "Check your email" banner using the server's `message`, form
+cleared. Failure → red banner with the server `error` or a generic message. Network
+error → "Network error. Please try again."
 
 ### Back end — `POST /api/contact` (`runtime = "nodejs"`)
 

@@ -185,15 +185,20 @@ export default function ContactForm({ projectSlug, initialProjectType }: Props) 
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      {/* Honeypot — visually hidden (not display:none, which some bots
-          specifically skip) and pulled out of both the tab order and the
-          accessibility tree, so no real visitor can encounter or fill it. */}
+      {/* Honeypot — a <select>, not a text <input>. Chrome (and most other
+          browsers) don't guess-fill arbitrary hidden dropdowns the way they
+          do text fields, so basic autofill can't trip this even though the
+          field is only visually hidden (not display:none, which some bots
+          specifically skip). It also matches the one bot pattern actually
+          observed: it always picked the first non-blank option in every
+          <select> it found (see docs/CONTACT_SPAM_INVESTIGATION.md) — a real
+          visitor never sees or touches this, so it stays at its blank
+          default. Pulled out of the tab order and the accessibility tree. */}
       <div
         style={{ position: "absolute", left: "-9999px", top: "auto", width: "1px", height: "1px", overflow: "hidden" }}
         aria-hidden="true"
       >
-        <input
-          type="text"
+        <select
           id={honeypotId}
           name="referenceId"
           tabIndex={-1}
@@ -201,7 +206,10 @@ export default function ContactForm({ projectSlug, initialProjectType }: Props) 
           aria-hidden="true"
           value={honeypot}
           onChange={(e) => setHoneypot(e.target.value)}
-        />
+        >
+          <option value=""></option>
+          <option value="1"></option>
+        </select>
       </div>
 
       {apiError ? (
