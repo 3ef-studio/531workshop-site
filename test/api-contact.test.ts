@@ -60,6 +60,74 @@ describe("POST /api/contact — validation", () => {
     expect(res.status).toBe(400);
     expect(h.connect).not.toHaveBeenCalled();
   });
+
+  it("rejects a message just under the 20-character server minimum (closes the client/server gap)", async () => {
+    // 19 characters, no whitespace involved in this rejection — this is
+    // purely the length check, not the shape check below.
+    const res = await post({ ...validBody, message: "a".repeat(19) });
+    expect(res.status).toBe(400);
+    expect(h.connect).not.toHaveBeenCalled();
+  });
+
+  it("rejects a message over the 4000-character maximum", async () => {
+    const res = await post({ ...validBody, message: "x".repeat(4001) });
+    expect(res.status).toBe(400);
+    expect(h.connect).not.toHaveBeenCalled();
+  });
+
+  it("accepts a message exactly at the 20-character boundary with normal whitespace", async () => {
+    const res = await post({ ...validBody, message: "Please build a table" }); // 20 chars
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ ok: true });
+  });
+
+  it("accepts a relatively terse but legitimate message", async () => {
+    const res = await post({ ...validBody, message: "Do you build custom tables?" });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ ok: true });
+  });
+});
+
+describe("POST /api/contact — spam content-shape rejection", () => {
+  it("rejects the observed spam shape (a single run of characters, no whitespace) without touching the database", async () => {
+    const res = await post({ ...validBody, message: "Ab3kx91LmP02QwrT7zXa" });
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ ok: false });
+    expect(h.connect).not.toHaveBeenCalled();
+    expect(h.send).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/contact — honeypot", () => {
+  it("silently accepts a submission with a filled honeypot field: no DB write, no token, no email", async () => {
+    const res = await post({ ...validBody, referenceId: "a bot filled this in" });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      ok: true,
+      message: "Submitted. Please check your email to confirm.",
+    });
+    expect(h.connect).not.toHaveBeenCalled();
+    expect(h.query).not.toHaveBeenCalled();
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("the honeypot short-circuit takes priority even when the rest of the payload is otherwise invalid", async () => {
+    const res = await post({
+      email: "not-an-email",
+      message: "hi",
+      referenceId: "x",
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ ok: true });
+    expect(h.connect).not.toHaveBeenCalled();
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("an empty or whitespace-only honeypot value is treated as a normal, real submission", async () => {
+    const res = await post({ ...validBody, referenceId: "   " });
+    expect(res.status).toBe(200);
+    expect(h.connect).toHaveBeenCalled();
+  });
 });
 
 describe("POST /api/contact — success path (mocked DB + Resend)", () => {

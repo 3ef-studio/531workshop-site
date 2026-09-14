@@ -6,6 +6,11 @@ import { Resend } from "resend";
 import crypto from "crypto";
 import { findGalleryProjectBySlug } from "@/lib/gallery-data";
 import { isProjectType, isTimeframe, MAX_DIMENSIONS_LENGTH } from "@/lib/contactOptions";
+import {
+  MAX_MESSAGE_LENGTH,
+  MIN_MESSAGE_LENGTH,
+  messageHasNoWhitespace,
+} from "@/lib/contactValidation";
 
 type ContactPayload = {
   firstName?: string;
@@ -19,6 +24,12 @@ type ContactPayload = {
   projectType?: string;
   dimensions?: string;
   timeframe?: string;
+  /**
+   * Honeypot. A hidden field a real visitor never sees or fills — see
+   * components/ContactForm.tsx. Any non-empty value here is treated as an
+   * automated submission (docs/CONTACT_SPAM_INVESTIGATION.md).
+   */
+  referenceId?: string;
 };
 
 /**
@@ -96,6 +107,16 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as ContactPayload;
 
+    // Honeypot check comes first, before any other validation. A real
+    // visitor's browser never populates this hidden field, so any non-empty
+    // value here is treated as automated: respond exactly as a normal
+    // successful submission would, but skip all real work — no DB
+    // transaction, no verification token, no Resend call — so the submitter
+    // gets no signal that anything was detected.
+    if ((body.referenceId || "").trim().length > 0) {
+      return NextResponse.json({ ok: true, message: "Submitted. Please check your email to confirm." });
+    }
+
     const firstName = (body.firstName || "").trim();
     const lastName = (body.lastName || "").trim();
     const emailRaw = (body.email || "").trim();
@@ -105,8 +126,20 @@ export async function POST(req: Request) {
     if (!emailRaw || !isValidEmail(emailRaw)) {
       return NextResponse.json({ ok: false, error: "Please enter a valid email." }, { status: 400 });
     }
-    if (!message || message.length < 5) {
-      return NextResponse.json({ ok: false, error: "Please enter a short message." }, { status: 400 });
+    if (!message || message.length < MIN_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { ok: false, error: `Please share a few more details (at least ${MIN_MESSAGE_LENGTH} characters).` },
+        { status: 400 }
+      );
+    }
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { ok: false, error: `Please shorten your message (${MAX_MESSAGE_LENGTH} characters max).` },
+        { status: 400 }
+      );
+    }
+    if (messageHasNoWhitespace(message)) {
+      return NextResponse.json({ ok: false, error: "Please enter a valid message." }, { status: 400 });
     }
 
     const email = normalizeEmail(emailRaw);

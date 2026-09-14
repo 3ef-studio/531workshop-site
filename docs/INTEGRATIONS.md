@@ -1,7 +1,12 @@
 # INTEGRATIONS — 531 Workshop Site
 
-_Last reviewed: 2026-08-27 (HEAD `eb40364`). Environment variables are listed by NAME
+_Last reviewed: 2026-09-11. Environment variables are listed by NAME
 ONLY. No secret values appear in this document or should ever be added to it._
+
+No new environment variables were introduced by the Gallery/Hero/Contact-enhancement work
+described in `FEATURES.md` and `ARCHITECTURE.md` — the only externally-required change was
+a database schema addition (`app.leads.project_context JSONB`, applied to production
+out-of-band; see §1 below and `TECHNICAL_DEBT.md` A8).
 
 ---
 
@@ -47,7 +52,9 @@ Names referenced in code but **not** in the committed `.env` (optional / fallbac
 - **Schema (assumed to pre‑exist — not defined in this repo):**
   - `app.leads` — columns referenced: `id`, `first_name`, `last_name`, `email`, `phone`,
     `message`, `verified`, `verified_at`, `source`, `referer`, `ip`, `user_agent`,
-    `created_at`.
+    `created_at`, and `project_context` (nullable `JSONB` — added to production
+    out-of-band via `ALTER TABLE app.leads ADD COLUMN project_context JSONB;`; stores an
+    optional structured record of a Gallery-inspired inquiry — see `FEATURES.md` §7).
   - `app.email_verification_tokens` — columns referenced: `id`, `lead_id`, `email`,
     `token_hash`, `expires_at`, `used_at`.
 - **Failure behavior:** any DB error inside the handler triggers `ROLLBACK` and returns
@@ -85,9 +92,15 @@ Names referenced in code but **not** in the committed `.env` (optional / fallbac
     and skip; a `send` throw there propagates to the outer catch → `ROLLBACK` (after the
     verification updates were already committed) → plain‑text 500, and the user never
     reaches `/contact?confirmed=1` even though the lead is verified.
-- **Email content injection:** the internal notification interpolates `row.first_name`,
-  `row.last_name`, `row.phone`, `row.message` directly into an HTML string with no
-  escaping. See `TECHNICAL_DEBT.md`.
+- **Email content injection:** resolved. The internal notification now runs every
+  user-supplied/free-text value (name, email, phone, message, and any project-context
+  `dimensions`) through a local `escapeHtml()` helper before interpolating it into the HTML
+  string (`app/api/contact/verify/route.ts`). The plain-text subject-line name is
+  intentionally left unescaped, since a mail header isn't HTML. See `TECHNICAL_DEBT.md` A2
+  (marked Resolved).
+- **Missing `Reply-To`:** the internal notification does not set a `Reply-To` header to the
+  customer's email — the shop owner can read the address in the body but can't just hit
+  "Reply" in their mail client to respond directly. See `TECHNICAL_DEBT.md` (new item).
 
 ## 3. Shopify — Buy Button JavaScript SDK (active purchase path)
 
@@ -128,9 +141,9 @@ Names referenced in code but **not** in the committed `.env` (optional / fallbac
 
 ## 5. YouTube (embedded video)
 
-- **Purpose:** marketing videos on `/about` and `/gallery2`.
+- **Purpose:** marketing videos on `/about` and `/gallery`.
 - **Implementation:** plain `<iframe src="https://www.youtube-nocookie.com/embed/<id>?rel=0&modestbranding=1" loading="lazy">`
-  in `app/about/page.tsx` (`R8_fj2ljYIM`) and `app/gallery2/page.tsx` (`wQ63sQTePeE`).
+  in `app/about/page.tsx` (`R8_fj2ljYIM`) and `app/gallery/page.tsx` (`wQ63sQTePeE`).
   Uses the privacy‑enhanced `youtube-nocookie.com` domain. No API key, no SDK.
 - **Failure behavior:** if a video is removed/private, the iframe shows YouTube's own
   error UI. No app‑level handling.

@@ -48,31 +48,73 @@ runs first and Playwright just starts the server.
 
 **Unit / API (`test/`)**
 
-- `contactValidation.test.ts` — the client form rules in `lib/contactValidation.ts`.
+- `contactValidation.test.ts` — the client form rules in `lib/contactValidation.ts`,
+  including the optional Project type / dimensions / timeframe fields (bounded, otherwise
+  unconstrained), and the `messageHasNoWhitespace` content-shape spam check (the observed
+  spam pattern, legitimate multi-sentence/terse/boundary messages, and a documented
+  limitation case) — see `docs/CONTACT_SPAM_INVESTIGATION.md`.
 - `products.test.ts` — `lib/products.ts`: catalog loading, `parsePriceNumber`,
   `sortProducts` (available-first, price ascending, title tiebreak).
-- `api-contact.test.ts` — `POST /api/contact`: validation, success path (lead + token
-  insert, commit, Resend call), and failure modes (missing `EMAIL_FROM`, Resend throw,
-  DB down).
+- `api-contact.test.ts` — `POST /api/contact`: validation, the success path (lead + token
+  insert, commit, Resend call), failure modes (missing `EMAIL_FROM`, Resend throw, DB
+  down), and the server-side project-context handling — resolving a valid Gallery slug
+  (re-deriving title/category from `GALLERY_IMAGES` rather than trusting the client),
+  ignoring an unknown/stale slug gracefully, storing `projectType`/`dimensions`/`timeframe`
+  when valid, silently dropping an invalid `projectType`/`timeframe` instead of rejecting
+  the request, truncating an over-long `dimensions` value, and storing no `project_context`
+  at all for a normal inquiry; plus the contact-spam Stage 1 protections — the honeypot
+  field short-circuiting to a normal-looking success with no DB/Resend calls (including
+  when the rest of the payload is otherwise invalid), the closed 20–4000 character
+  server-side message window, and the content-shape rejection of the observed spam pattern.
 - `api-contact-verify.test.ts` — `GET /api/contact/verify`: missing/invalid token,
-  successful verification + redirect, already-verified lead, DB error.
+  successful verification + redirect, already-verified lead, DB error; plus dedicated
+  coverage for the internal-notification email's rendering: project-context block
+  presence/absence/partial rendering, Category-vs-Project-Type redundancy suppression,
+  phone number presentation formatting (10-digit, 11-digit-with-country-code, unrecognized
+  formats, missing phone), the `America/Chicago` submitted-at timestamp (DST-correct via
+  `Intl.DateTimeFormat`), and HTML-escaping of every user-supplied/free-text field
+  (message, dimensions, name, phone).
 - `api-shopify-product.test.ts` — `GET /api/shopify/product`: missing handle / env,
   response reshaping, GraphQL errors, unknown handle.
+- `sitemap.test.ts` — `app/sitemap.ts` / `app/robots.ts`: static + product routes, every
+  Gallery category and project route, exclusion of `/gallery1`/`/gallery2`/API/framework
+  routes, and correct site-origin usage.
 
 **Playwright (`e2e/smoke.spec.ts`)**
 
-- Pages load with a 200 and the right `<h1>`: `/`, `/about`, `/faq`, `/gallery2`, `/shop`.
+- Pages load with a 200 and the right `<h1>`: `/`, `/about`, `/faq`, `/gallery`, `/shop`.
+- Gallery: every category page returns 200; a project page renders its details and links
+  back to its category; a project page with full metadata renders materials/year/
+  dimensions; every project page has an "I want something like this" CTA to
+  `/contact?project=<slug>` and following it lands on Contact with the matching project
+  context; cutting-board entries that reuse Shop imagery render with no purchase UI; an
+  unknown category, a known category with an unknown slug, and a real slug under the wrong
+  category all 404.
+- Hero: "Start a Custom Project" targets the currently-showing slide's Gallery project
+  while "View Our Work" always stays `/gallery`; automatic rotation updates the CTA
+  destination as the slide changes; following the Hero CTA lands on Contact with that
+  project's context.
 - `/shop` renders all 7 product cards.
 - `/shop/small-board` renders the Buy Button mount point and the Details section.
 - `/shop/<unknown>` returns 404.
 - Header navigation works.
-- Contact form: empty submit shows client validation; valid input clears it; **no POST is
-  made to `/api/contact`**.
+- Contact form: empty submit shows client validation; valid input clears it; a valid
+  `?project=` shows the Gallery context card and preselects the matching Project type; an
+  invalid `?project=` fails gracefully into the normal contact experience; **no POST is
+  made to `/api/contact`** in any of these.
+
+**Playwright (`e2e/seo.spec.ts`)**
+
+- Per-route canonical URLs (home, about, faq, shop, shop PDP, contact, and now every
+  Gallery category/project route) resolve correctly and no longer collapse to the
+  homepage; `/gallery2` permanently redirects to `/gallery`; `sitemap.xml` lists the public
+  routes plus product and Gallery pages; `robots.txt` allows the public site, disallows
+  `/api/`, and points at the sitemap.
 
 Some tests deliberately assert *current* (imperfect) behavior and reference
 `docs/TECHNICAL_DEBT.md` — e.g. `parsePriceNumber("$175 - $290") === Infinity` (F4) and
-`/api/contact` returning `{ok:true}` with `EMAIL_FROM` unset (A4). When those bugs are
-fixed, flip the assertion in the same test.
+`/api/contact` returning `{ok:true}` with `EMAIL_FROM` unset and not calling Resend (A4).
+When those bugs are fixed, flip the assertion in the same test.
 
 ---
 

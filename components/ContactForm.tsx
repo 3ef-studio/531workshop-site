@@ -78,6 +78,13 @@ export default function ContactForm({ projectSlug, initialProjectType }: Props) 
 
   const [values, setValues] = useState<FormState>(emptyValues);
 
+  // Honeypot — not a real form field, not part of ContactFormValues, never
+  // validated. A real visitor never sees or fills this (see the hidden
+  // input below); any non-empty value here tells the server to silently
+  // discard the submission. See docs/CONTACT_SPAM_INVESTIGATION.md.
+  const [honeypot, setHoneypot] = useState("");
+  const honeypotId = `${uid}-referenceId`;
+
   const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -135,7 +142,8 @@ export default function ContactForm({ projectSlug, initialProjectType }: Props) 
         headers: { "Content-Type": "application/json" },
         // Only the slug travels to the server — title/category are re-derived
         // there from the trusted Gallery data, never trusted from the client.
-        body: JSON.stringify({ ...values, projectSlug }),
+        // referenceId is the honeypot; it's always empty for a real visitor.
+        body: JSON.stringify({ ...values, projectSlug, referenceId: honeypot }),
       });
 
       type ApiSuccess = { ok: true; message?: string };
@@ -164,6 +172,7 @@ export default function ContactForm({ projectSlug, initialProjectType }: Props) 
 
       // Optional: clear form after successful submit
       setValues(emptyValues);
+      setHoneypot("");
       setTouched({});
       setSubmitted(false);
     } catch (err) {
@@ -176,6 +185,25 @@ export default function ContactForm({ projectSlug, initialProjectType }: Props) 
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {/* Honeypot — visually hidden (not display:none, which some bots
+          specifically skip) and pulled out of both the tab order and the
+          accessibility tree, so no real visitor can encounter or fill it. */}
+      <div
+        style={{ position: "absolute", left: "-9999px", top: "auto", width: "1px", height: "1px", overflow: "hidden" }}
+        aria-hidden="true"
+      >
+        <input
+          type="text"
+          id={honeypotId}
+          name="referenceId"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
       {apiError ? (
         <div className="ui-card p-4 border border-red-500/40" role="alert">
           <div className="text-sm font-medium text-red-600">Couldn’t send</div>

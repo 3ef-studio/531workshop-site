@@ -1,6 +1,6 @@
 # OPERATIONS — 531 Workshop Site
 
-_Last reviewed: 2026-08-27 (HEAD `eb40364`). Describes what the repository actually
+_Last reviewed: 2026-09-11. Describes what the repository actually
 provides for running, building, and deploying the site._
 
 ---
@@ -57,8 +57,9 @@ Next.js pulls `sharp` in transitively. `images-incoming/` is gitignored. The cur
 
 ## Deployment configuration
 
-- **No deployment manifest is committed** (no `vercel.json`, `netlify.toml`, `Dockerfile`,
-  or GitHub Actions workflow).
+- **No deployment manifest is committed** (no `vercel.json`, `netlify.toml`, or
+  `Dockerfile`). A GitHub Actions workflow (`.github/workflows/ci.yml`) exists, but it runs
+  lint/test/build/e2e on push and PR — it does not deploy anything.
 - **Platform: Vercel** (inferred — see `SYSTEM_OVERVIEW.md` for the evidence:
   stock Vercel README, `public/vercel.svg`, `.vercel` in `.gitignore`, and the
   `x-forwarded-for` handling in `app/api/contact/route.ts`). Deployment is presumably the
@@ -70,9 +71,13 @@ Next.js pulls `sharp` in transitively. `images-incoming/` is gitignored. The cur
   `NEXT_PUBLIC_GA_ID` / `PGSSLMODE` / `POSTGRES_URL`.
 - **Database provisioning is out of band.** The `app.leads` and
   `app.email_verification_tokens` tables must be created manually before the contact form
-  works — there are no migrations in the repo. The `ssl: { rejectUnauthorized: false }`
-  default suggests a hosted Postgres with a self‑signed / non‑bundled CA (e.g.
-  Neon/Supabase/Vercel Postgres style).
+  works — there are no migrations in the repo. `app.leads` must additionally have a
+  nullable `project_context JSONB` column (`ALTER TABLE app.leads ADD COLUMN
+  project_context JSONB;`) for the Contact project-inquiry feature to persist correctly;
+  this was applied to the current production database out-of-band but a fresh environment
+  stood up from this repo alone would need it applied manually too. The
+  `ssl: { rejectUnauthorized: false }` default suggests a hosted Postgres with a
+  self‑signed / non‑bundled CA (e.g. Neon/Supabase/Vercel Postgres style).
 - **Git branching:** current branch `main`; commit history is a single linear stream of
   small content/style commits ("Added images", "updated gallery", "hero tweak", …). No
   tags, no release process evident.
@@ -122,8 +127,13 @@ needed for `next/image` optimization in production.
 3. **Serverless + `pg` `Pool` per route module.** Each contact route creates its own pool
    at module scope; under serverless concurrency this can exhaust Postgres connections.
    Consider a pooled/serverless driver or `PgBouncer`. (See `TECHNICAL_DEBT.md`.)
-4. **No rate limiting / spam protection on `/api/contact`.** Every POST writes a lead row
-   and (post‑verify) can trigger emails. This is a cost and abuse surface.
+4. **No rate limiting on `/api/contact`.** A honeypot field and stricter server-side
+   message validation (20–4000 chars, must contain whitespace) were added 2026-09-14 in
+   response to a confirmed automated-spam wave (see `docs/CONTACT_SPAM_INVESTIGATION.md`),
+   but there is still no per-IP or site-wide rate limit or CAPTCHA. Every non-honeypot,
+   non-rejected POST still writes a lead row and (post‑verify) can trigger emails — this
+   remains a cost and abuse surface for a more sophisticated submitter than the one
+   observed so far.
 5. **Verification links depend on a correct base URL.** If `SITE_URL` is unset the link is
    derived from the incoming request; behind proxies/preview deployments this can produce
    wrong or non‑routable links.
@@ -135,5 +145,7 @@ needed for `next/image` optimization in production.
    convention to avoid confusion and bloat.
 8. **Bleeding‑edge framework versions** (Next 16.0.10, React 19.2.1, Tailwind 4). Upgrades
    and third‑party compatibility need care; pin/verify before bumping.
-9. **No tests and no CI.** Regressions in the lead flow or the sort logic would only be
-   caught manually.
+9. **Automated tests and CI exist** (`test/`, `e2e/`, `.github/workflows/ci.yml` — see
+   `docs/TESTING.md`) covering the lead pipeline, sort logic, Gallery routing, and SEO
+   metadata; this is a regression safety net, not exhaustive coverage. Shopify
+   add-to-cart/checkout, real email delivery, and visual/theme review remain manual.

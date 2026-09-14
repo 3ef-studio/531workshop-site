@@ -2,8 +2,15 @@
 //
 // Client-side validation rules for the contact form. Extracted verbatim from
 // components/ContactForm.tsx so the rules can be unit-tested. Behavior is unchanged.
+//
+// MIN_MESSAGE_LENGTH, MAX_MESSAGE_LENGTH, and messageHasNoWhitespace are also
+// imported by app/api/contact/route.ts so the client and server enforce the
+// same message rules from one place — see docs/CONTACT_SPAM_INVESTIGATION.md.
 
 import { MAX_DIMENSIONS_LENGTH } from "./contactOptions";
+
+export const MIN_MESSAGE_LENGTH = 20;
+export const MAX_MESSAGE_LENGTH = 4000;
 
 export type ContactFormValues = {
   firstName: string;
@@ -20,6 +27,19 @@ export type ContactFormValues = {
 export type ContactFormErrors = Partial<Record<keyof ContactFormValues, string>>;
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Every submission in the 2026-09 automated spam wave (see
+ * docs/CONTACT_SPAM_INVESTIGATION.md) used a single unbroken run of random
+ * characters — no whitespace anywhere — as the message, always at or just
+ * above 20 characters. A real inquiry, however short, always contains at
+ * least one space. This is a narrow, evidence-based check against that one
+ * observed shape — not a general gibberish/entropy/language detector — and
+ * intentionally applies only to the message field.
+ */
+export function messageHasNoWhitespace(message: string): boolean {
+  return message.length >= MIN_MESSAGE_LENGTH && !/\s/.test(message);
+}
 
 export function validateContactForm(values: ContactFormValues): ContactFormErrors {
   const e: ContactFormErrors = {};
@@ -40,8 +60,9 @@ export function validateContactForm(values: ContactFormValues): ContactFormError
 
   const msg = values.message.trim();
   if (!msg) e.message = "Message is required.";
-  else if (msg.length < 20) e.message = "Please share a few details (at least 20 characters).";
-  else if (msg.length > 4000) e.message = "Message is too long.";
+  else if (msg.length < MIN_MESSAGE_LENGTH)
+    e.message = `Please share a few details (at least ${MIN_MESSAGE_LENGTH} characters).`;
+  else if (msg.length > MAX_MESSAGE_LENGTH) e.message = "Message is too long.";
 
   // dimensions optional — just bounded, no format requirement
   if (values.dimensions.trim().length > MAX_DIMENSIONS_LENGTH) {

@@ -1,6 +1,7 @@
 # TECHNICAL DEBT / RISK REGISTER — 531 Workshop Site
 
-_Last reviewed: 2026-08-27 (HEAD `eb40364`); F1 updated 2026-09-04. This is an inventory;
+_Last reviewed: 2026-09-11 (Gallery/Hero/Contact-enhancement reconciliation); F1 updated
+2026-09-04. This is an inventory;
 fixes happen in later, scoped missions. Items are grouped by area and each is tagged
 **[Confirmed]** (verified in the code), **[Investigate]** (needs runtime checking or
 product context), **[Resolved <date>]** (fixed in a later mission, with a note on how), or
@@ -11,19 +12,30 @@ to watch for noted)._
 
 ## A. Lead capture / contact API
 
-### A1. No rate limiting, CAPTCHA, or honeypot on the live contact form — **[Confirmed]**
-`components/ContactForm.tsx` and `app/api/contact/route.ts` have no anti‑automation
-measures. Every `POST /api/contact` inserts two DB rows and sends one Resend email. This
-is an open spam and cost vector. (Ironically, the *unused* `components/LeadForm.tsx` has a
-`company` honeypot; the form actually in use does not.)
+### A1. No rate limiting or CAPTCHA on the live contact form — **[Partially Resolved 2026-09-14]**
+Following a confirmed automated-spam wave (see `docs/CONTACT_SPAM_INVESTIGATION.md`),
+`components/ContactForm.tsx` now includes a hidden honeypot field (`referenceId`) and
+`app/api/contact/route.ts` silently accepts-and-discards any submission that fills it — no
+DB write, no verification token, no Resend call. This targets the specific bot profile
+observed in the investigation (an unsophisticated tool with no evidence of avoiding hidden
+fields). **Rate limiting and CAPTCHA/Turnstile remain absent** — the investigation found
+the observed traffic came from ~15 distinct IPs (several via known Tor exit ranges) with
+low per-IP repetition, making simple per-IP rate limiting a weak fit for what was actually
+seen, and found no evidence the bot is sophisticated enough to require a CAPTCHA-grade
+challenge. Both remain explicit, evidence-gated Stage 2 options — see the investigation
+report's §7 for the staging rationale — not implemented here. `components/LeadForm.tsx`
+(dead code, unused) still has its own, separate `company` honeypot precedent that predates
+this work.
 
-### A2. Email templates interpolate unescaped user input — **[Confirmed]**
-`app/api/contact/verify/route.ts:115-130` builds the internal notification email by
-injecting `row.first_name`, `row.last_name`, `row.phone`, and `row.message` directly into
-an HTML string. A lead can inject arbitrary HTML/links into the email the shop owner
-receives (content spoofing / phishing within the notification). Not SQL injection (queries
-are parameterized) — this is HTML injection into outbound email. Escape before
-interpolation or send as plain text.
+### A2. Email templates interpolate unescaped user input — **[Resolved 2026-09-10]**
+`app/api/contact/verify/route.ts` now runs every user-supplied/free-text value (name,
+email, phone, message, and any project-context `dimensions`) through a local
+`escapeHtml()` helper before interpolating it into the internal notification's HTML. The
+plain-text subject-line name is intentionally left unescaped (a mail header isn't HTML, so
+escaping it would show literal `&amp;`-style entities to the recipient). The customer-facing
+confirmation email (`app/api/contact/route.ts`) never interpolates user-supplied data into
+its HTML, so it was never at risk. Covered by `test/api-contact-verify.test.ts` (HTML/script
+injection in `message`, `dimensions`, name/phone all assert escaped output).
 
 ### A3. Resend send outcome is not checked; failures are invisible to the user — **[Confirmed — observed at runtime 2026-08-28]**
 Both routes `await resend.emails.send(...)` but **never inspect the returned `{ data,
@@ -49,10 +61,14 @@ route still returns `{ ok: true, message: "check your email…" }`. The user wai
 confirmation email that will never arrive, and the lead can never be verified (so the
 owner is never notified). Only a `console.error` marks this.
 
-### A5. Client and server validation disagree — **[Confirmed]**
-Client (`ContactForm.validate`): first/last name required, message 20–4000 chars.
-Server (`app/api/contact/route.ts`): names optional, message only `>= 5` chars, **no upper
-bound**. Direct API callers can store nameless leads and arbitrarily large messages.
+### A5. Client and server validation disagree — **[Resolved 2026-09-14, partially]**
+The message-length half of this gap is fixed: `app/api/contact/route.ts` now enforces the
+same 20–4000 character window as the client (`lib/contactValidation.ts`'s
+`MIN_MESSAGE_LENGTH`/`MAX_MESSAGE_LENGTH`, imported by both), closing the gap that let the
+2026-09 spam wave's 20+-character junk messages clear a 5-character server floor trivially.
+**First/last name are still optional server-side** (the client requires them) — that part
+of the original gap remains open; it wasn't implicated in the investigated spam (the bot
+always supplied *some* name) and was out of scope for the spam-focused Stage 1 fix.
 
 ### A6. `pg` `Pool` created per route module under serverless — **[Investigate]**
 `app/api/contact/route.ts:16` and `app/api/contact/verify/route.ts:8` each do
@@ -69,7 +85,11 @@ against MITM. Acceptable only if the network path is fully trusted; otherwise pi
 ### A8. Database schema is not in the repo — **[Confirmed]**
 `app.leads` and `app.email_verification_tokens` (and columns like `verified_at`) are
 assumed to exist. No migrations, no schema SQL, no seed. New environments cannot be stood
-up from this repo alone, and column/constraint drift is invisible to code review.
+up from this repo alone, and column/constraint drift is invisible to code review. The
+Contact project-inquiry enhancement added a further undertracked dependency: `app.leads`
+must also have a nullable `project_context JSONB` column (`ALTER TABLE app.leads ADD
+COLUMN project_context JSONB;`), applied to production out-of-band with no migration
+record anywhere in this repo.
 
 ### A9. Verification route never triggers the page's `?error=` UI — **[Confirmed]**
 `app/contact/page.tsx` handles `?error=expired` / other, but
@@ -86,6 +106,25 @@ obligations for the business.
 `/api/contact/verify?token=<raw>`. Query‑string secrets can land in access logs and
 `Referer` headers. The endpoint redirects immediately and the token is single‑use +
 24h‑scoped, so exposure is limited, but a POST body or path segment would be cleaner.
+
+### A12. Internal notification email has no `Reply-To` set to the customer — **[Confirmed]**
+`app/api/contact/verify/route.ts`'s `resend.emails.send({...})` call for the internal
+"New verified inquiry" notification does not set a `replyTo` field. The customer's email
+address is visible in the rendered body, but the shop owner can't just hit "Reply" in their
+mail client to respond directly to the customer — they have to copy the address out
+manually first. Low severity (a workaround exists), but a real, currently-unaddressed
+usability gap. Fix: add `replyTo: row.email` (unescaped — the SDK sets a real header field,
+not HTML) to the `emails.send` call.
+
+### A13. The message content-shape spam check is intentionally narrow — **[Deferred, by design]**
+`lib/contactValidation.ts`'s `messageHasNoWhitespace` (used by `app/api/contact/route.ts`)
+rejects a message that is a single unbroken run of characters with no whitespace, 20+
+characters long — an exact match for the one bot pattern documented in
+`docs/CONTACT_SPAM_INVESTIGATION.md`. It is not a general gibberish/entropy/language
+detector, and a bot that appends even one space to an otherwise-random string defeats it
+entirely (this is asserted directly in `test/contactValidation.test.ts` as a documented
+limitation, not an oversight). This was a deliberate scope decision for the Stage 1 fix,
+not a bug — revisit only if evidence emerges of spam that this rule doesn't catch.
 
 ---
 
@@ -106,15 +145,22 @@ this is latent, but anyone re‑adding them to a page ships a broken form.
 ### B3. Template leftovers from another 3EF project — **[Confirmed]**
 `lib/portfolio.ts` (VeilMark / DDE / csv‑tools portfolio content), `lib/newsletter/dde.ts`
 (reads `data/dde/**` JSON that isn't in the repo), `components/ProjectCard.tsx` (links to
-`/projects/[slug]`, which doesn't exist), `components/ClientEvent.tsx`,
+`/projects/[slug]`, which doesn't exist — unrelated to the newer Gallery "project" concept
+introduced by `/gallery/[category]/[slug]`, despite the name collision), `types/project.ts`
+(the same unrelated `Project` shape backing `ProjectCard`, also unused), `components/ClientEvent.tsx`,
 `components/CtaTrack.tsx`, and the `pricing: { provider: "rapidapi", tiers }` machinery in
 `types/product.ts` / `ProductCard` / the PDP. None of it is reachable from this site.
 
 ### B4. Unused route and CSS — **[Confirmed]**
 `app/gallery1/page.tsx` is a live route with no navigation to it (a design alternative
-left in). `app/theme-a.css` and `app/theme-c.css` are never imported (only `theme-b.css`
-is). `FEATURED_GALLERY_IMAGES` (`lib/gallery-data.ts`) and `getAllProductSlugs`
-(`lib/products.ts`) are unused exports.
+left in place, out of scope for the Gallery v2 rebuild). `app/gallery2/page.tsx` (the
+former primary gallery) has since been **deleted** — `/gallery2` now permanently redirects
+to `/gallery` (`next.config.ts`), so it is retired rather than orphaned. `app/theme-a.css`
+and `app/theme-c.css` are never imported (only `theme-b.css` is). `FEATURED_GALLERY_IMAGES`
+(`lib/gallery-data.ts`) and `getAllProductSlugs` (`lib/products.ts`) are unused exports —
+note the Hero rotation (`lib/hero-data.ts`) resolves its slides via an explicit
+`HERO_SLIDE_IDS` list, not via `FEATURED_GALLERY_IMAGES`, so this export remains genuinely
+unused rather than newly consumed.
 
 ### B5. Duplicate PostCSS config — **[Confirmed]**
 Both `postcss.config.cjs` and `postcss.config.mjs` exist with identical content. Keep one.
@@ -146,19 +192,26 @@ it (`app/shop/[slug]/page.tsx`'s `generateMetadata` set `openGraph.url` but not
 are all duplicates of the homepage, suppressing indexing of interior pages.
 **Fix:** the global `alternates` block was removed from `app/layout.tsx`; each indexable
 route now sets its own `alternates.canonical` — `app/page.tsx` (`/`), `app/about/page.tsx`,
-`app/faq/page.tsx`, `app/gallery2/page.tsx`, `app/shop/page.tsx`, `app/contact/page.tsx`,
-and `app/shop/[slug]/page.tsx` via `generateMetadata` (`/shop/<slug>`). Canonicals resolve
-against the existing `metadataBase` (`lib/site.ts`). `/gallery1` was left without a
-canonical (unlinked internal route — see B4). Verified in built/served HTML; regression
-tests in `e2e/seo.spec.ts`.
+`app/faq/page.tsx`, `app/shop/page.tsx`, `app/contact/page.tsx`, and `app/shop/[slug]/page.tsx`
+via `generateMetadata` (`/shop/<slug>`). Canonicals resolve against the existing
+`metadataBase` (`lib/site.ts`). **Since resolved:** the gallery rebuild extended this same
+pattern to the new route tree — `app/gallery/page.tsx` (`/gallery`),
+`app/gallery/[category]/page.tsx`, and `app/gallery/[category]/[slug]/page.tsx` (both via
+`generateMetadata`) all set their own canonical; `/gallery2` no longer exists as a page
+(retired, now a redirect — see B4). `/gallery1` was left without a canonical (unlinked
+internal route — see B4). Verified in built/served HTML; regression tests in
+`e2e/seo.spec.ts`.
 
 ### D2. No `sitemap.ts`, `robots.ts`, or `robots.txt` — **[Resolved 2026-08-28]**
 Nothing guided crawlers. **Fix:** added `app/sitemap.ts` (Next metadata route → `/sitemap.xml`)
-listing the 6 indexable static routes plus every product detail page derived from
-`data/products.json` via `getAllProducts()`; it excludes `/gallery1`, API routes, and
-framework routes. Added `app/robots.ts` (→ `/robots.txt`): `Allow: /`, `Disallow: /api/`,
-and a `Sitemap:` pointer. Both use the site URL from `lib/site.ts`. Regression tests in
-`test/sitemap.test.ts` and `e2e/seo.spec.ts`.
+listing the indexable static routes plus every product detail page derived from
+`data/products.json` via `getAllProducts()`; it excludes `/gallery1`, `/gallery2`, API
+routes, and framework routes. Added `app/robots.ts` (→ `/robots.txt`): `Allow: /`,
+`Disallow: /api/`, and a `Sitemap:` pointer. Both use the site URL from `lib/site.ts`.
+**Since extended:** the gallery rebuild added every `/gallery/[category]` and
+`/gallery/[category]/[slug]` URL to the sitemap, derived from `lib/gallery-data.ts`'s
+`CATEGORIES`/`GALLERY_IMAGES` rather than hand-listed, so a new Gallery item is picked up
+automatically. Regression tests in `test/sitemap.test.ts` and `e2e/seo.spec.ts`.
 
 ### D3. Marketing numbers are hand‑entered and unverifiable — **[Investigate]**
 `lib/home-data.ts` `TESTIMONIAL_META = { rating: 4.9, count: 18 }` while `TESTIMONIALS`
@@ -188,10 +241,22 @@ Verify the white logo is actually visible there.
 `app/theme-c.css:1` is labelled `/* app/theme-b.css */`. Copy‑paste error; harmless but
 confusing.
 
-### E4. Modals / menus are not focus‑trapped — **[Confirmed]**
-`components/GalleryCard.tsx` dialog handles Esc + body‑scroll lock but does not trap focus
-or return focus on close. `Header.tsx`'s mobile menu is a plain toggled `<div>`. Minor
-accessibility debt.
+### E4. Modals / menus are not focus‑trapped — **[Confirmed, partially resolved]**
+The `GalleryCard.tsx` dialog previously referenced here (Esc + body-scroll lock, no focus
+trap) **no longer exists** — the Gallery rebuild removed the click-to-open modal entirely
+in favor of real project pages (`/gallery/[category]/[slug]`), so that specific concern is
+moot. `Header.tsx`'s mobile menu is still a plain toggled `<div>` with no focus trap or
+focus return on close — that part of this item remains accurate.
+
+### E5. Inconsistent `prefers-reduced-motion` detection pattern between components — **[Confirmed]**
+`components/Hero.tsx` (rebuilt for the rotating hero) detects `prefers-reduced-motion` via
+`useSyncExternalStore` against `window.matchMedia` — deliberately chosen because a plain
+`useMemo`/`useEffect`+`useState` read can leave a derived value (e.g. a disabled-button
+state) stuck on a stale pre-hydration snapshot. `components/TestimonialsCarousel.tsx`
+still uses the older `useMemo`-based pattern and was left untouched as out of scope for the
+Hero work. The two components can now behave subtly differently around hydration timing
+for the same media query. Low severity (no user-visible bug currently observed), but worth
+aligning `TestimonialsCarousel` to the newer pattern if it's touched again.
 
 ---
 
@@ -300,9 +365,12 @@ disagree; a mismatch produces wrong canonical URLs or broken confirmation links.
 `Permissions-Policy`. The site embeds third‑party scripts (shopifycdn, optionally GTM) and
 iframes (YouTube) with no CSP constraining them.
 
-### G5. No tests, no CI — **[Confirmed]**
-No test runner, no `.github/workflows`. The lead pipeline, the sort logic, and the
-Shopify embed have no automated coverage.
+### G5. No tests, no CI — **[Resolved]**
+A Vitest unit/API suite (`test/`) and a Playwright e2e suite (`e2e/`) now exist, along with
+`.github/workflows/ci.yml` (push to `main` + PRs: lint → test → build → e2e). See
+`docs/TESTING.md` for coverage. Coverage is a regression safety net, not exhaustive — several
+items in this document (A3, A4, A5, F4) are deliberately asserted as *current* behavior in
+tests, with a note to flip the assertion if/when they're fixed.
 
 ### G6. Bleeding‑edge dependency versions — **[Investigate]**
 Next 16.0.10, React 19.2.1, Tailwind 4, `eslint-config-next` 16. Verify production
@@ -327,16 +395,45 @@ has been shared outside secure channels.
   `RESEND_FROM` var the code doesn't use (it uses `EMAIL_FROM`).
 - **H2 [Confirmed]** `next/image` is used with local `src` values with no existence guard.
   A typo in `lib/gallery-data.ts` / `data/products.json` / `app/about/page.tsx` yields a
-  runtime 404 for that image with no fallback. (~13 referenced files spot‑checked and
-  present at review time.)
+  runtime 404 for that image with no fallback. (Spot-checked at various points across the
+  Gallery/Hero/Shop-preview work as new entries were added; the referenced-file count has
+  grown well past the original ~13 and isn't tracked as a fixed number.)
 - **H3 [Confirmed]** `components/TestimonialsCarousel.tsx:43` disables
   `react-hooks/exhaustive-deps`; `clampIndex` is recreated each render and referenced in
-  an effect — currently benign.
-- **H4 [Confirmed]** Home "Featured work" items and `ProjectCard` links point at routes
-  that don't render per‑item detail (`/gallery2`, `/projects/[slug]`); there is no
-  per‑project page anywhere.
+  an effect — currently benign. See also E5 (this component's older
+  `prefers-reduced-motion` pattern vs. `Hero.tsx`'s newer one).
+- **H4 [Resolved]** Previously: Home "Featured work" items and `ProjectCard` links pointed
+  at routes with no per-item detail (`/gallery2`, `/projects/[slug]`). Since resolved
+  independently on both sides: the Home page's "Featured work" section was replaced by a
+  Shop preview linking to real `/shop/[slug]` detail pages, and the Gallery rebuild gave
+  every Gallery item a real `/gallery/[category]/[slug]` detail page. The residual half of
+  this item — `components/ProjectCard.tsx` itself is still dead code, still linking to a
+  `/projects/[slug]` route that doesn't exist — remains tracked under B3 (it was never a
+  live link on any rendered page, so nothing user-facing was ever broken by it).
 - **H5 [Investigate]** `app/about/page.tsx` workshop strip lists `Working-pic-2.jpg` /
   `Working-pic-3.jpg` (JPEG) while `.webp` versions of the same names also exist in
   `public/images/projects/`; confirm the intended asset.
-- **H6 [Confirmed]** Server‑side `message` has no maximum length (A5) — a very large body
-  is inserted verbatim into `app.leads.message`.
+- **H6 [Resolved 2026-09-14]** Server‑side `message` previously had no maximum length (A5).
+  Now capped at `MAX_MESSAGE_LENGTH` (4000, matching the client) in
+  `app/api/contact/route.ts`.
+
+---
+
+## I. Gallery content
+
+### I1. Some Gallery categories are thin — **[Investigate]**
+As of the current 23-entry catalog (`lib/gallery-data.ts`), category sizes are uneven —
+e.g. "Commercial Projects" has only 2 items, and "Cutting Boards" has 4 (1 original entry
+plus 3 that intentionally reuse Shop product photography — see `FEATURES.md` §2). A
+thin category page is a weaker landing experience and a thinner indexable page for SEO
+than a fuller one. Not a defect — the content simply reflects what photography exists
+today — but worth flagging for the client: more photos in under-represented categories
+would directly improve both.
+
+### I2. A handful of unreviewed/ambiguous source photos were left out of the Gallery — **[Investigate]**
+During the Gallery data-modeling work, a small number of candidate photos in
+`public/images/projects/` (e.g. a baptismal font variant, a couple of bar/shelving shots,
+a barnwood side-table shot) were ambiguous enough — near-duplicates, unclear subject, or
+unclear category — that they were left out of `GALLERY_IMAGES` rather than guessed at.
+They were never deleted, just not catalogued. Revisit with the client if a fuller Gallery
+is wanted; low urgency since nothing user-facing depends on them.
