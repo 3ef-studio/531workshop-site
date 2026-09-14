@@ -34,6 +34,16 @@ input type). No automated test currently exercises real browser autofill behavio
 was caught by manual production testing, not the test suite; that's a gap worth being
 aware of if this technique is revisited again.
 
+**Confirmed 2026-09-14 via Incognito testing:** a submission from a clean browser profile
+(no extensions, no saved autofill data) completed the full flow correctly end-to-end
+(lead created, confirmation email received, verified, internal notification triggered). A
+submission from the same tester's regular Chrome profile still silently no-op'd even after
+the `<select>` fix, narrowing the root cause to something specific to that profile — most
+likely a password manager or form-filling extension aggressive enough to populate a hidden
+`<select>`, not plain Chrome autofill on its own. This meaningfully lowers the real-world
+risk to ordinary customers (who are unlikely to run that kind of extension) but means this
+tester's own regular browser isn't a reliable way to re-test the live form going forward.
+
 **Rate limiting and CAPTCHA/Turnstile remain absent** — the investigation found the
 observed traffic came from ~15 distinct IPs (several via known Tor exit ranges) with low
 per-IP repetition, making simple per-IP rate limiting a weak fit for what was actually
