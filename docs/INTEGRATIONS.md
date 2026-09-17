@@ -57,6 +57,13 @@ Names referenced in code but **not** in the committed `.env` (optional / fallbac
     optional structured record of a Gallery-inspired inquiry — see `FEATURES.md` §7).
   - `app.email_verification_tokens` — columns referenced: `id`, `lead_id`, `email`,
     `token_hash`, `expires_at`, `used_at`.
+  - `app.contact_rejections` — added 2026-09-17, in-repo schema this time
+    (`id UUID DEFAULT app.uuid_generate_v4()`, `created_at`, `reason`, `first_name`,
+    `last_name`, `email`, `phone`, `message`, `honeypot_value`, `project_slug`,
+    `project_type`, `dimensions`, `timeframe`, `referer`, `ip`, `user_agent`). One row per
+    spam-filter rejection (honeypot trigger or the no-whitespace content-shape check —
+    see `FEATURES.md` §7), for manual review of possible false positives. Never linked to
+    `app.leads`; no email is ever sent for a row in this table.
 - **Failure behavior:** any DB error inside the handler triggers `ROLLBACK` and returns
   HTTP 500 with a generic message (`POST /api/contact`) or a plain‑text 500 (`verify`).
   A missing/unreachable database makes the contact form non‑functional (500). There is no

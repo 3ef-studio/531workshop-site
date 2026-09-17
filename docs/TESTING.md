@@ -65,7 +65,9 @@ runs first and Playwright just starts the server.
   at all for a normal inquiry; plus the contact-spam Stage 1 protections — the honeypot
   field short-circuiting to a normal-looking success with no DB/Resend calls (including
   when the rest of the payload is otherwise invalid), the closed 20–4000 character
-  server-side message window, and the content-shape rejection of the observed spam pattern.
+  server-side message window, the content-shape rejection of the observed spam pattern,
+  and the `app.contact_rejections` safety-net logging (present for honeypot/shape
+  rejections, absent for plain length rejections, and resilient to its own DB failures).
 - `api-contact-verify.test.ts` — `GET /api/contact/verify`: missing/invalid token,
   successful verification + redirect, already-verified lead, DB error; plus dedicated
   coverage for the internal-notification email's rendering: project-context block

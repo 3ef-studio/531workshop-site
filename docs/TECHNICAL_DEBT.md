@@ -44,6 +44,16 @@ likely a password manager or form-filling extension aggressive enough to populat
 risk to ordinary customers (who are unlikely to run that kind of extension) but means this
 tester's own regular browser isn't a reliable way to re-test the live form going forward.
 
+**Safety net added 2026-09-17:** every honeypot trigger and every
+`messageHasNoWhitespace` rejection is now recorded to a new `app.contact_rejections` table
+(reason, the submitted name/email/phone/message/project fields, the honeypot's actual
+value when relevant, and referer/ip/user-agent) — see `INTEGRATIONS.md` §1 for the schema
+and `FEATURES.md` §7 for the behavior. This exists specifically so a false positive like
+the one above can be caught and the customer followed up with by hand, rather than
+discovered only by accident. It does not log the plain too-short/too-long message
+validation, since those are visible to the submitter as an ordinary form error and were
+never the source of a silent loss.
+
 **Rate limiting and CAPTCHA/Turnstile remain absent** — the investigation found the
 observed traffic came from ~15 distinct IPs (several via known Tor exit ranges) with low
 per-IP repetition, making simple per-IP rate limiting a weak fit for what was actually

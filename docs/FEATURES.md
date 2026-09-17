@@ -308,6 +308,15 @@ error → "Network error. Please try again."
   `dimensions` field (a legitimate value like `72x36x30` has no whitespace) and is not a
   general gibberish or language detector — see `TECHNICAL_DEBT.md` A13 for its documented
   scope/limitations.
+- **Rejection safety net:** both the honeypot short-circuit above and this content-shape
+  rejection also insert a row into `app.contact_rejections` (`logRejectedSubmission`) —
+  the reason, the submitted name/email/phone/message/project fields, the honeypot's actual
+  value when relevant, and referer/ip/user-agent. This never creates a lead and never
+  sends email; it exists purely so a false positive (see `TECHNICAL_DEBT.md` A1) can be
+  caught and the customer followed up with by hand instead of silently lost. A failure
+  while logging is caught internally and never changes the response the requester sees.
+  The plain too-short/too-long message-length rejections below are **not** logged here —
+  the submitter already sees those as an ordinary form error.
 - Builds a `project_context` object server-side (`buildProjectContext`): resolves
   `gallerySlug`/`galleryTitle`/`galleryCategory` from the submitted `projectSlug` (silently
   ignored if unresolvable), validates `projectType`/`timeframe` against

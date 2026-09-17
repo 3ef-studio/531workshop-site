@@ -78,6 +78,65 @@ const pool = new Pool({
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function truncate(value: string | undefined, max: number): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, max) : null;
+}
+
+/**
+ * Records a rejected contact submission for manual review — a safety net so
+ * a false positive in the spam filter (see docs/TECHNICAL_DEBT.md A1) can be
+ * caught and the customer followed up with by hand, rather than silently
+ * lost. Purely diagnostic: never creates a lead, never sends email, and a
+ * failure here must never affect the response already decided for the
+ * requester (hence the internal try/catch). Fields are truncated defensively
+ * since this path can run before the normal length validation does (the
+ * honeypot check fires first).
+ */
+async function logRejectedSubmission(
+  reason: "honeypot" | "message_no_whitespace",
+  body: ContactPayload,
+  req: Request
+) {
+  try {
+    const referer = req.headers.get("referer") || null;
+    const userAgent = req.headers.get("user-agent") || null;
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      null;
+
+    await pool.query(
+      `
+      INSERT INTO app.contact_rejections
+        (reason, first_name, last_name, email, phone, message, honeypot_value,
+         project_slug, project_type, dimensions, timeframe, referer, ip, user_agent)
+      VALUES
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      `,
+      [
+        reason,
+        truncate(body.firstName, 200),
+        truncate(body.lastName, 200),
+        truncate(body.email, 200),
+        truncate(body.phone, 50),
+        truncate(body.message, MAX_MESSAGE_LENGTH),
+        truncate(body.referenceId, 200),
+        truncate(body.projectSlug, 200),
+        truncate(body.projectType, 50),
+        truncate(body.dimensions, MAX_DIMENSIONS_LENGTH),
+        truncate(body.timeframe, 50),
+        referer,
+        ip,
+        userAgent,
+      ]
+    );
+  } catch (err) {
+    console.error("Failed to log rejected contact submission:", err);
+  }
+}
+
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -114,6 +173,7 @@ export async function POST(req: Request) {
     // transaction, no verification token, no Resend call — so the submitter
     // gets no signal that anything was detected.
     if ((body.referenceId || "").trim().length > 0) {
+      await logRejectedSubmission("honeypot", body, req);
       return NextResponse.json({ ok: true, message: "Submitted. Please check your email to confirm." });
     }
 
@@ -139,6 +199,7 @@ export async function POST(req: Request) {
       );
     }
     if (messageHasNoWhitespace(message)) {
+      await logRejectedSubmission("message_no_whitespace", body, req);
       return NextResponse.json({ ok: false, error: "Please enter a valid message." }, { status: 400 });
     }
 

@@ -10,7 +10,11 @@ const h = vi.hoisted(() => {
 });
 
 vi.mock("pg", () => ({
-  Pool: vi.fn(() => ({ connect: h.connect })),
+  // `query` is exposed directly on the Pool (used by the rejection-logging
+  // path, which doesn't need a transaction) alongside `connect` (used by the
+  // real lead-insert transaction) — both resolve through the same mock so
+  // tests can inspect every query the route makes in one place.
+  Pool: vi.fn(() => ({ connect: h.connect, query: h.query })),
 }));
 
 vi.mock("resend", () => ({
@@ -89,26 +93,65 @@ describe("POST /api/contact — validation", () => {
 });
 
 describe("POST /api/contact — spam content-shape rejection", () => {
-  it("rejects the observed spam shape (a single run of characters, no whitespace) without touching the database", async () => {
+  it("rejects the observed spam shape (a single run of characters, no whitespace) without creating a lead", async () => {
     const res = await post({ ...validBody, message: "Ab3kx91LmP02QwrT7zXa" });
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toMatchObject({ ok: false });
-    expect(h.connect).not.toHaveBeenCalled();
+    expect(h.connect).not.toHaveBeenCalled(); // no app.leads transaction
     expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("logs the rejection to app.contact_rejections for manual review", async () => {
+    await post({ ...validBody, message: "Ab3kx91LmP02QwrT7zXa" });
+
+    const call = h.query.mock.calls.find((c) =>
+      /INSERT INTO app\.contact_rejections/i.test(String(c[0])),
+    );
+    expect(call).toBeTruthy();
+    const params = call?.[1] as unknown[];
+    expect(params[0]).toBe("message_no_whitespace"); // reason
+    expect(params[3]).toBe(validBody.email); // email preserved for follow-up
+    expect(params[5]).toBe("Ab3kx91LmP02QwrT7zXa"); // message preserved verbatim
+  });
+
+  it("does NOT log a plain too-short/too-long message to app.contact_rejections (not a spam-filter rejection)", async () => {
+    await post({ ...validBody, message: "hi" });
+    expect(
+      h.query.mock.calls.some((c) => /INSERT INTO app\.contact_rejections/i.test(String(c[0]))),
+    ).toBe(false);
+  });
+
+  it("a failure while logging the rejection still returns the normal rejection response", async () => {
+    h.query.mockRejectedValueOnce(new Error("db hiccup while logging"));
+    const res = await post({ ...validBody, message: "Ab3kx91LmP02QwrT7zXa" });
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ ok: false });
   });
 });
 
 describe("POST /api/contact — honeypot", () => {
-  it("silently accepts a submission with a filled honeypot field: no DB write, no token, no email", async () => {
+  it("silently accepts a submission with a filled honeypot field: no lead, no token, no email", async () => {
     const res = await post({ ...validBody, referenceId: "a bot filled this in" });
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       ok: true,
       message: "Submitted. Please check your email to confirm.",
     });
-    expect(h.connect).not.toHaveBeenCalled();
-    expect(h.query).not.toHaveBeenCalled();
+    expect(h.connect).not.toHaveBeenCalled(); // no app.leads transaction
     expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("logs the honeypot trigger (including its value) to app.contact_rejections for manual review", async () => {
+    await post({ ...validBody, referenceId: "a bot filled this in" });
+
+    const call = h.query.mock.calls.find((c) =>
+      /INSERT INTO app\.contact_rejections/i.test(String(c[0])),
+    );
+    expect(call).toBeTruthy();
+    const params = call?.[1] as unknown[];
+    expect(params[0]).toBe("honeypot"); // reason
+    expect(params[3]).toBe(validBody.email); // email preserved for follow-up
+    expect(params[6]).toBe("a bot filled this in"); // honeypot_value
   });
 
   it("the honeypot short-circuit takes priority even when the rest of the payload is otherwise invalid", async () => {
@@ -127,6 +170,13 @@ describe("POST /api/contact — honeypot", () => {
     const res = await post({ ...validBody, referenceId: "   " });
     expect(res.status).toBe(200);
     expect(h.connect).toHaveBeenCalled();
+  });
+
+  it("a failure while logging the honeypot trigger still returns the normal silent-success response", async () => {
+    h.query.mockRejectedValueOnce(new Error("db hiccup while logging"));
+    const res = await post({ ...validBody, referenceId: "x" });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ ok: true });
   });
 });
 
