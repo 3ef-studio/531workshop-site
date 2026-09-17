@@ -208,6 +208,7 @@ There are **no `/api/lead` or `/api/subscribe` routes**, although `LeadForm.tsx`
 | Product catalog | `data/products.json` via `lib/products.ts` | `/shop`, `/shop/[slug]`, homepage Shop preview, `ProductCard` | No |
 | Live product price / variants / availability | Shopify (Storefront API) | Buy Button iframe on PDP | Yes (Shopify admin) |
 | Leads + their optional project context | Postgres schema `app` — tables `leads` (incl. `project_context JSONB`), `email_verification_tokens` | `/api/contact`, `/api/contact/verify` | Yes (writes) |
+| Rejected contact submissions (spam-filter safety net) | Postgres schema `app` — table `contact_rejections` | `/api/contact` (write-only; no page reads it) | Yes (writes) |
 | Owner notifications | Resend | `/api/contact/verify` | — |
 
 **Lead flow (the one real write path), including the optional project-inquiry context:**
@@ -218,40 +219,56 @@ There are **no `/api/lead` or `/api/subscribe` routes**, although `LeadForm.tsx`
    falls back to the normal experience (no error state). A resolved project renders a small
    context card and preselects the matching Project Type in the form.
 2. `ContactForm` POSTs `{firstName,lastName,email,phone,message,projectType,dimensions,
-   timeframe,projectSlug}` to `/api/contact` — the slug is the *only* Gallery-derived field
-   trusted from the client.
-3. Route validates required fields, builds a `project_context` object entirely server-side
+   timeframe,projectSlug,referenceId}` to `/api/contact` — the slug is the *only*
+   Gallery-derived field trusted from the client; `referenceId` is a hidden honeypot
+   `<select>` that stays empty for a real visitor (see step 3).
+3. **Spam-filter short-circuit, checked before anything else.** A non-empty `referenceId`
+   (honeypot) or, further down, a `message` of 20+ characters with no whitespace at all
+   (`messageHasNoWhitespace`, `lib/contactValidation.ts`) causes the route to log a row to
+   `app.contact_rejections` (reason, the submitted fields, the honeypot's actual value,
+   referer/ip/user-agent) and stop — a filled honeypot returns the same success response a
+   real submission would (silently, so an automated submitter gets no signal); the
+   no-whitespace case returns an ordinary 400. Neither path touches `app.leads`,
+   `app.email_verification_tokens`, or Resend. This table exists purely so a false
+   positive can be caught and the customer followed up with by hand — see
+   `docs/TECHNICAL_DEBT.md` A1 for the incident that motivated it. Plain too-short/
+   too-long message-length rejections are **not** logged here (the submitter already sees
+   those as a normal form error).
+4. Route validates required fields, builds a `project_context` object entirely server-side
    (`buildProjectContext`): re-resolves `gallerySlug`/`galleryTitle`/`galleryCategory` from
    `GALLERY_IMAGES` by the submitted slug (ignored silently if unknown), validates
    `projectType`/`timeframe` against `lib/contactOptions.ts`'s allow-lists (dropped silently
    if invalid — low-stakes optional fields, not worth rejecting the whole submission over),
    and truncates `dimensions` to `MAX_DIMENSIONS_LENGTH`. Empty context serializes to `null`.
-4. Opens a `pg` transaction, `INSERT`s into `app.leads` (`verified = FALSE`, plus
+5. Opens a `pg` transaction, `INSERT`s into `app.leads` (`verified = FALSE`, plus
    `source='contact'`, `referer`, `ip` from `x-forwarded-for`/`x-real-ip`, `user_agent`, and
    `project_context` as `JSON.stringify(...)` or `null`).
-5. Generates a random 32‑byte token (`base64url`), stores **only its SHA‑256 hash** in
+6. Generates a random 32‑byte token (`base64url`), stores **only its SHA‑256 hash** in
    `app.email_verification_tokens` with a 24h `expires_at`, commits.
-6. Sends the raw token in a confirm‑link email via Resend
+7. Sends the raw token in a confirm‑link email via Resend
    (`{baseUrl}/api/contact/verify?token=…`). `baseUrl` = `SITE_URL` env, else derived from
    the request URL.
-7. If `EMAIL_FROM` or `RESEND_API_KEY` is missing, the route still returns `ok: true` and
+8. If `EMAIL_FROM` or `RESEND_API_KEY` is missing, the route still returns `ok: true` and
    just `console.error`s.
-8. User clicks the link → `/api/contact/verify` re‑hashes the token, finds a row where
+9. User clicks the link → `/api/contact/verify` re‑hashes the token, finds a row where
    `used_at IS NULL AND expires_at > now()`, sets `leads.verified = TRUE`, sets
    `token.used_at = now()`, commits.
-9. Sends an internal "New verified inquiry" email to `CONTACT_TO_EMAIL` (skipped with a
+10. Sends an internal "New verified inquiry" email to `CONTACT_TO_EMAIL` (skipped with a
    `console.warn` if `CONTACT_TO_EMAIL` / `EMAIL_FROM` / `RESEND_API_KEY` missing). The
    email HTML-escapes every user-supplied value (name, email, phone, message, dimensions),
    presentation-formats the phone number and the submitted-at timestamp
    (`America/Chicago`, DST-correct via `Intl.DateTimeFormat`), and renders a project-context
    block only when one exists — suppressing the "Category:" line when it would just repeat
    the customer-selected "Project type:" line verbatim.
-10. 302 redirect to `/contact?confirmed=1`.
+11. 302 redirect to `/contact?confirmed=1`.
 
 The database schema is **not defined in this repo** — the tables `app.leads` (now including
 `project_context JSONB`, applied out-of-band to production) and
 `app.email_verification_tokens` (and columns `verified_at`, etc.) are assumed to already
-exist. No migrations directory, no schema SQL.
+exist. No migrations directory, no schema SQL. The one exception is `app.contact_rejections`
+(2026-09-17) — unlike the other two tables, it didn't pre-exist this project; its exact
+`CREATE TABLE` is recorded in `docs/INTEGRATIONS.md` §1 for reference, even though it was
+still applied by hand rather than through a migration tool.
 
 ## State management
 
