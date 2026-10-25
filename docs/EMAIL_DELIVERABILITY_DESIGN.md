@@ -45,6 +45,25 @@ newsletter or other recurring mail (`components/NewsletterForm.tsx` posts to
 6. **No "you didn't ask for this" line.** Anyone can enter someone else's address; a
    recipient who didn't submit the form and marks the email as spam damages the sending
    domain's reputation.
+7. **No per-recipient limit on confirmation emails.** Every submission that passes
+   validation inserts a new lead (`app/api/contact/route.ts`, `INSERT INTO app.leads`) and
+   sends a new confirmation (`resend.emails.send`), regardless of how many were just sent
+   to that address. Anyone can make the site repeatedly email a third party, and each
+   message is a spam-complaint opportunity against the sending domain. TECHNICAL_DEBT
+   **A1** covers per-IP rate limiting (judged a weak fit); limiting by _recipient_ is a
+   different control and isn't recorded anywhere.
+8. **Concurrent confirm requests both send the internal notification.** In
+   `app/api/contact/verify/route.ts` the token is read without a lock
+   (`SELECT … FROM app.email_verification_tokens evt … AND evt.used_at IS NULL`, no
+   `FOR UPDATE`) and marked used with `UPDATE … SET used_at = now() WHERE id = $1` — no
+   `used_at IS NULL` condition and no check of how many rows changed. Two requests that
+   overlap (double-click, or a scanner fetch racing the customer's click) both read the
+   token as unused, both commit, and both send "New verified inquiry". §3.4 removes the
+   scanner trigger but not a double-submitted form.
+
+_Findings 7 and 8 were added 2026-10-25 from a review of Cosmo's recent engineering
+lessons (per-recipient email caps — Cosmo M-24/M-91; exactly-one-winner claims with
+race tests — Cosmo M-24/M-86/M-91)._
 
 ---
 
@@ -61,6 +80,8 @@ newsletter or other recurring mail (`components/NewsletterForm.tsx` posts to
 | Subject-line rewording ("quick question" → plainer) | Current subjects are already plain | No change |
 | Resend idempotency key | Useful but minor | Optional |
 | Out-of-code: verified sending domain with SPF/DKIM/DMARC; link domain = sender domain | Yes | **Operations checklist** (§5) |
+| Per-person email cap (M-24, M-91) | Yes — finding 7 | **Port** as a per-recipient confirmation cap (§3.5) |
+| Exactly-one-winner claim before a side effect, proven by a concurrency test (M-24, M-86, M-91) | Yes — finding 8 | **Port** as an atomic token claim (§3.6) |
 
 ---
 
@@ -137,11 +158,64 @@ Trade-off: a genuine customer clicks twice instead of once. The page could alter
 live at `app/contact/confirm/page.tsx` with a server action; the route-handler form above
 is the smaller change and keeps everything in one file.
 
-### 3.5 What is deliberately not changing
+### 3.5 Per-recipient confirmation cap (`app/api/contact/route.ts`) — §7 D5
+
+Before inserting the lead, count confirmations recently sent to the normalised address.
+`app.email_verification_tokens` has no creation timestamp, but every token is created
+with a fixed 24 h expiry, so `expires_at - interval '24 hours'` is its creation time —
+no schema change:
+
+```sql
+SELECT count(*) FROM app.email_verification_tokens
+WHERE email = $1 AND expires_at > now() + interval '23 hours'   -- created in the last hour
+```
+
+(and the same with `> now()` for "last 24 hours"). Suggested limits: **1 per hour, 3 per
+24 hours** per address. When over the limit:
+
+- don't insert a lead, create a token, or send an email;
+- log the attempt via `logRejectedSubmission` with a new reason
+  `"recipient_rate_limited"` (`reason` is free `TEXT`, no constraint — add the value to
+  the comment in `docs/INTEGRATIONS.md`), so a real customer who resubmits can still be
+  followed up by hand;
+- return the **same** success response as a normal submission (no signal to the
+  submitter, matching the honeypot's behaviour).
+
+A customer who legitimately resubmits within the hour already has a valid confirmation
+link from the first submission. The counting query runs inside the existing transaction;
+two simultaneous submissions for one address could both pass the check — acceptable for a
+soft cap (the goal is to stop floods, not guarantee an exact count).
+
+If the 24 h expiry ever changes, this query must change with it — keep both values in one
+constant.
+
+### 3.6 Claim the token atomically (`app/api/contact/verify/route.ts`)
+
+Replace the read-then-update with a single conditional update that only one request can
+win, and send the notification only from the winner:
+
+```sql
+UPDATE app.email_verification_tokens
+SET used_at = now()
+WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+RETURNING id, lead_id, email
+```
+
+- No row returned → today's "invalid or expired" 400 (an already-used token looks the
+  same, which is fine: the first request has already done the work).
+- Row returned → mark the lead verified, load the lead fields for the email (the existing
+  `JOIN` becomes a second `SELECT … FROM app.leads WHERE id = $1`), `COMMIT`, then send.
+
+Under Postgres's default READ COMMITTED isolation, the second of two overlapping updates
+waits for the first to commit, re-checks `used_at IS NULL`, finds it false, and returns no
+row — so exactly one request sends. Applies equally to today's GET handler and to the
+POST handler in §3.4 (the GET page in §3.4 keeps its read-only lookup).
+
+### 3.7 What is deliberately not changing
 
 - No `List-Unsubscribe` headers (transactional mail; see §2).
-- No change to spam filtering of submissions (honeypot, whitespace rule —
-  `docs/CONTACT_SPAM_INVESTIGATION.md`).
+- No change to spam filtering of submission _content_ (honeypot, whitespace rule —
+  `docs/CONTACT_SPAM_INVESTIGATION.md`); §3.5 limits _sends_ per recipient only.
 - No database schema change.
 - No email templating library or redesign.
 
@@ -187,6 +261,9 @@ Tests stay fully mocked (`vi.mock("resend")`, mocked `pg`), per `vitest.config.t
 - `replyTo` present when `EMAIL_REPLY_TO` is set; key absent when unset.
 - Malformed `SITE_URL` (e.g. `"not a url"`) → link uses the request origin; a `SITE_URL`
   with a path/trailing slash → link uses its origin.
+- If D5 approved: with the mocked count query reporting a confirmation in the last hour,
+  the route inserts no lead, sends no email, logs `recipient_rate_limited`, and returns
+  the normal success body. Set the limit to "unlimited" once to prove the test fails.
 
 `test/api-contact-verify.test.ts`:
 - Notification has `text` (name, email, message, project context lines, unescaped) and a
@@ -196,6 +273,11 @@ Tests stay fully mocked (`vi.mock("resend")`, mocked `pg`), per `vitest.config.t
   returns the confirm page; `POST` with the token performs today's work and returns 303 to
   `/contact?confirmed=1`; `POST` with an invalid/used token → 400. Temporarily make `GET`
   run the old logic once to prove the "GET changes nothing" test fails.
+- Atomic claim (§3.6): the claiming query carries `used_at IS NULL` and `RETURNING`; when
+  the mocked claim returns no row, no lead update runs and no email is sent. Mocked `pg`
+  can't reproduce real row locking, so also run the race once by hand against a local or
+  disposable Postgres: fire two confirm requests for one token in parallel and confirm
+  exactly one notification is sent (and that the old query sends two).
 
 `e2e/` — check whether any spec follows the confirm link; update it for the extra click if
 D1 is approved.
@@ -215,6 +297,10 @@ Then `npm run lint`, `npm test`, `npm run build`.
   email env vars reported as success) is the same shape. Natural to do alongside, since the
   same `emails.send` calls are being edited — but it widens scope.
 - **D4 — Idempotency key on the confirmation send?** Optional, low value at current volume.
+- **D5 — Per-recipient confirmation cap (§3.5), and its limits?** Recommended: 1/hour,
+  3/24 hours. A new control on the contact form, so it needs a go-ahead. (§3.6, the atomic
+  token claim, is a correctness fix with no behaviour change for customers and needs no
+  separate decision.)
 
 ---
 
@@ -224,6 +310,7 @@ Then `npm run lint`, `npm test`, `npm run build`.
 - `app/api/contact/route.ts`
 - `app/api/contact/verify/route.ts`
 - `test/api-contact.test.ts`, `test/api-contact-verify.test.ts`
-- `docs/INTEGRATIONS.md` (env table, Resend section), `docs/OPERATIONS.md` (env list,
+- `docs/INTEGRATIONS.md` (env table, Resend section, the new `recipient_rate_limited`
+  rejection reason), `docs/OPERATIONS.md` (env list,
   checklist §5), `docs/DECISIONS.md` (D1 if adopted), `docs/TECHNICAL_DEBT.md` (mark A12 —
   and A3/A4/A11 as applicable — resolved), and this document's status line.
