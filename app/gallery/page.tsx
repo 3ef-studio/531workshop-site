@@ -5,6 +5,8 @@ import GalleryCard from "@/components/GalleryCard";
 import { GALLERY_IMAGES, CATEGORIES, getGalleryItemsByCategory } from "@/lib/gallery-data";
 
 export const metadata: Metadata = {
+  title: "Gallery",
+  description: "Custom hardwood furniture crafted for you and your home — browse past projects by category.",
   alternates: { canonical: "/gallery" },
 };
 

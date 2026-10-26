@@ -384,11 +384,21 @@ Resend; the `SITE_URL` / `NEXT_PUBLIC_SITE_URL` env for correct link generation.
 - `layout.tsx`: Geist fonts as CSS vars; `<html lang="en" class="dark">`; conditional
   Google Tag Manager / gtag snippet gated on `NEXT_PUBLIC_GA_ID` (with `anonymize_ip`);
   `Header` + `<main class="mx-auto max-w-6xl px-4">` + `Footer`.
-- `metadata`: title template `%s — <SITE.name>`, `metadataBase = new URL(SITE.url)`,
-  OpenGraph, Twitter `summary_large_image` (`creator: "@3EF_Studio"`). There is no global
+- `metadata`: title template `` %s — <SITE.shortName> `` (`"531 Workshop"` — a short brand
+  suffix, deliberately distinct from the longer descriptive `SITE.name` used as the
+  homepage's own default title, to avoid every per-page title duplicating the brand name —
+  see `TECHNICAL_DEBT.md` D5), `metadataBase = new URL(SITE.url)`, OpenGraph, Twitter
+  `summary_large_image` (`creator: "@3EF_Studio"`), both carrying a shared default preview
+  image (`public/images/projects/Cutting-board-collage.webp`). There is no global
   `alternates.canonical` — every indexable route sets its own via a page-level `metadata`
   export or `generateMetadata` (home, about, faq, gallery, gallery category, gallery
-  project, shop, shop PDP, contact).
+  project, shop, shop PDP, contact) — and as of 2026-10-26 every one of those routes also
+  sets its own distinct `title`/`description` (previously `/gallery`, `/contact`, and
+  `/about` silently inherited the homepage's).
+- A `LocalBusiness` JSON-LD script (`application/ld+json`) in `<head>` — name,
+  description, URL, phone, email, service area, and the same default image. No street
+  address (the business doesn't publish one anywhere on the site — see
+  `TECHNICAL_DEBT.md` D7).
 - `Header`: sticky, scroll‑reactive background, responsive nav + mobile menu ("Custom
   Gallery" → `/gallery`).
 - `Footer`: blurb, page links (Gallery → `/gallery`), Instagram/Facebook/TikTok, dynamic
@@ -397,8 +407,13 @@ Resend; the `SITE_URL` / `NEXT_PUBLIC_SITE_URL` env for correct link generation.
   page, every Gallery category page, and every Gallery project page — derived from
   `lib/gallery-data.ts`'s `CATEGORIES` and `GALLERY_IMAGES` rather than hand-listed, so a
   new Gallery item is automatically included. Intentionally excludes `/gallery1` (unlinked
-  legacy route) and `/gallery2` (retired, now a redirect).
+  legacy route) and `/gallery2` (retired, now a redirect). Depends on `NEXT_PUBLIC_SITE_URL`
+  being set correctly in the deployment environment — it wasn't, for months; see
+  `TECHNICAL_DEBT.md` D4.
 - `app/robots.ts` (→ `/robots.txt`): `Allow: /`, `Disallow: /api/`, points at the sitemap.
+- `next.config.ts` redirects: `/gallery2` → `/gallery`, and `/shop/p/:slug*` → `/shop` (a
+  leftover URL pattern from an older version of the site, still indexed by Google — see
+  `TECHNICAL_DEBT.md` D8).
 
 ---
 

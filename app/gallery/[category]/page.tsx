@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!isGalleryCategory(category)) return {};
 
   const label = getCategoryLabel(category);
-  const title = `${label} • 531 Workshop`;
+  const title = label;
   const description = `Custom ${label.toLowerCase()} built by 531 Workshop.`;
 
   return {

@@ -4,6 +4,8 @@ import ContactForm from "@/components/ContactForm";
 import { findGalleryProjectBySlug, getCategoryLabel } from "@/lib/gallery-data";
 
 export const metadata: Metadata = {
+  title: "Contact",
+  description: "Get in touch about a custom furniture project — tell us what you're looking for and we'll follow up within 1-2 business days.",
   // Canonical ignores the ?confirmed / ?error / ?project query variants.
   alternates: { canonical: "/contact" },
 };

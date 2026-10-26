@@ -255,6 +255,105 @@ has 5 entries; the home page renders a hard‑coded 5‑star glyph and "(18 proj
 Confirm these claims are substantiated (review aggregation) before relying on them
 publicly.
 
+### D4. `NEXT_PUBLIC_SITE_URL` was never set in production — canonical/OG/sitemap/robots all pointed at `localhost:3000` — **[Resolved 2026-10-26]**
+Discovered 2026-10-26 while reconciling two Claude-cloud-session design docs against the
+live site. `lib/site.ts`'s `SITE.url = process.env.NEXT_PUBLIC_SITE_URL || "http://
+localhost:3000"` had been silently falling back the whole time — `NEXT_PUBLIC_SITE_URL`
+was absent from every Vercel environment (confirmed via `vercel env ls`; only
+`CONTACT_TO_EMAIL`, `EMAIL_FROM`, `RESEND_API_KEY`, `DATABASE_URL`, and the two Shopify
+vars existed). Directly confirmed against the live site:
+
+```
+canonical:        http://localhost:3000/shop/small-board
+og:url:            http://localhost:3000/shop/small-board
+sitemap.xml <loc>: http://localhost:3000, http://localhost:3000/about, …
+robots.txt:        Sitemap: http://localhost:3000/sitemap.xml
+```
+
+Every page's canonical tag and OpenGraph URL was wrong, and **the entire sitemap.xml
+has been listing unreachable `localhost` URLs** — useless to Google/Bing, since a crawler
+can't follow those links. This directly undercuts the D1/D2 SEO work (resolved
+2026‑08‑28) and the "is SEO working" discussion from 2026‑09‑21–23: the sitemap had never
+actually pointed anywhere real, which is a more complete explanation for the lack of
+measurable organic traffic than "just be patient."
+
+**Not affected:** the contact-form confirmation emails. `app/api/contact/route.ts`'s
+`baseUrlFromRequest` reads a *different*, also-unset variable (`SITE_URL`) but falls back
+to the incoming request's own `protocol://host`, which is genuinely `www.531workshop.com`
+in production — so every real confirmation link exercised this session (Kaitlin, Colin
+of Forest Awards & Engraving) was unaffected by this bug.
+
+**Fix:** `NEXT_PUBLIC_SITE_URL=https://www.531workshop.com` added to the Production
+environment via `vercel env add` on 2026-10-26, followed by a production redeploy (`vercel
+--prod`) to rebuild the bundle with the corrected value — `NEXT_PUBLIC_*` variables are
+inlined at *build* time, not read at request time, so the env var alone wasn't enough.
+Verified against the live site post-deploy: canonical, `og:url`, every `sitemap.xml`
+`<loc>`, and `robots.txt`'s `Sitemap:` line all correctly show `https://www.531workshop.com`.
+
+### D5. Every page title duplicated the site name; `/gallery`, `/contact`, `/about` had no title at all — **[Resolved 2026-10-26]**
+Found in the same 2026-10-26 SEO sweep. `app/layout.tsx`'s title template
+(`` `%s — ${SITE.name}` ``) used the *full* long `SITE.name`
+("531 Workshop - Custom Hardwood Cutting Boards & Woodworking"), while every page that
+set its own title (`/shop`, `/shop/[slug]`, `/gallery/[category]`,
+`/gallery/[category]/[slug]`, `/faq`) *also* appended "531 Workshop" itself — e.g.
+`/shop/small-board` rendered as `"Small Cutting Board • 531 Workshop — 531 Workshop -
+Custom Hardwood Cutting Boards & Woodworking"` (over 100 characters; Google truncates
+around 50–60). Separately, `/gallery`, `/contact`, and `/about` set no `title` at all and
+silently inherited the homepage's exact title and description — a duplicate-title/
+duplicate-description signal across at least those four URLs.
+
+**Fix:** added `SITE.shortName = "531 Workshop"` (`lib/site.ts`); the layout's template now
+uses it (`` `%s — ${SITE.shortName}` ``). Removed the redundant per-page "531 Workshop"
+suffix from the five files above. Added a distinct `title`/`description` to
+`app/gallery/page.tsx`, `app/contact/page.tsx`, `app/about/page.tsx`. Verified locally:
+`/shop/small-board` now renders `"Small Cutting Board — 531 Workshop"`.
+
+### D6. No Open Graph or Twitter Card image anywhere on the site — **[Resolved 2026-10-26]**
+`app/layout.tsx`'s `twitter.card` is `"summary_large_image"`, which requires an image to
+render as intended; neither `openGraph.images` nor `twitter.images` was set anywhere
+(root layout or any page), so sharing any page on Twitter/X, Facebook, LinkedIn, Slack, or
+iMessage showed a bare text preview.
+
+**Fix:** added a shared site-wide default (`public/images/projects/
+Cutting-board-collage.webp`, 1600×1474 — already used as `Hero.tsx`'s own fallback image)
+to both `openGraph.images` and `twitter.images` in `app/layout.tsx`. **Known limitation:**
+the image is closer to square (~1.08:1) than the ideal ~1.91:1 landscape ratio for a
+large-image social card, so some platforms may center-crop it. A purpose-cropped image
+would be a nicer future refinement; per-page custom images (each Shop product/Gallery
+project using its own photo) were also considered and deferred — this single global
+default was judged the smallest change that closes the actual gap (no image at all).
+
+### D7. No structured data (JSON-LD) anywhere on the site — **[Resolved 2026-10-26]**
+No `LocalBusiness`/`Product`/any `application/ld+json` existed anywhere in the codebase.
+For a local service business, this is a commonly-recommended signal that helps Google
+understand the business as an entity.
+
+**Fix:** added a `LocalBusiness` JSON-LD script to `app/layout.tsx` — name, description,
+URL, phone (`+1-630-638-5504`), email (`531workshop@gmail.com`), and `areaServed`
+("Chicagoland and surrounding areas", matching the Contact page's own wording), plus the
+same default image as D6. **Deliberately excludes a street address** — `app/contact/
+page.tsx` already only publishes a service area, not a street address (the business
+doesn't publish one), so this doesn't add one either; a product decision confirmed
+explicitly before implementing, not an oversight. `Product` schema on Shop PDPs was
+considered and deferred as a separate, smaller follow-on if wanted later.
+
+### D8. Legacy `/shop/p/<slug>` URLs still indexed by Google, 404 on the live site — **[Resolved 2026-10-26]**
+A `site:531workshop.com` search surfaced `/shop/p/cedar-bar-table` ("Cedar Outdoor Bar") —
+confirmed 404 on the live site, and "Cedar Outdoor Bar" doesn't exist in the current
+`data/products.json` under any slug. The URL pattern itself (`/shop/p/<slug>`) doesn't
+match the current app at all (today's routes are `/shop/<slug>`, no `/p/` segment) — a
+leftover from an older version of the site that Google's index hadn't caught up on, most
+likely because D4's broken sitemap gave it no reliable signal to re-crawl and correct
+itself. No 1:1 mapping to a current product exists, so a specific redirect per old slug
+isn't possible.
+
+**Fix:** added a catch-all redirect in `next.config.ts` — `/shop/p/:slug*` → `/shop`
+(permanent), same pattern as the existing `/gallery2` → `/gallery` rule — so anyone
+(human or crawler) hitting any old `/shop/p/...` URL lands on the shop index instead of a
+dead end. Covered by `e2e/seo.spec.ts`. This doesn't force Google to re-index faster on
+its own — see the D4 note about Search Console remaining the recommended (still deferred)
+way to request that directly.
+
 ---
 
 ## E. Theming / UI

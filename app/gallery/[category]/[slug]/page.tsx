@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const label = getCategoryLabel(category);
   const displayTitle = item.title ?? item.alt;
-  const title = `${displayTitle} • 531 Workshop`;
+  const title = displayTitle;
   const description =
     item.description ?? `${displayTitle} — a custom ${label.toLowerCase()} project by 531 Workshop.`;
 

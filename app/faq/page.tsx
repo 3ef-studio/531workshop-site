@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { faqItems } from "@/lib/faq-data";
 
 export const metadata: Metadata = {
-  title: "Frequently Asked Questions | 531 Workshop",
+  title: "Frequently Asked Questions",
   description:
     "Answers to common questions about cutting boards and custom woodworking projects, materials, lead times, and ordering from 531 Workshop.",
   alternates: { canonical: "/faq" },

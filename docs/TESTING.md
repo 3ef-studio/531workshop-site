@@ -109,7 +109,8 @@ runs first and Playwright just starts the server.
 
 - Per-route canonical URLs (home, about, faq, shop, shop PDP, contact, and now every
   Gallery category/project route) resolve correctly and no longer collapse to the
-  homepage; `/gallery2` permanently redirects to `/gallery`; `sitemap.xml` lists the public
+  homepage; `/gallery2` permanently redirects to `/gallery`; legacy `/shop/p/*` URLs
+  permanently redirect to `/shop`; `sitemap.xml` lists the public
   routes plus product and Gallery pages; `robots.txt` allows the public site, disallows
   `/api/`, and points at the sitemap.
 

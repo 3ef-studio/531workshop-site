@@ -2,7 +2,7 @@ import { getAllProducts, sortProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 
 export const metadata = {
-  title: "Products • 531 Workshop",
+  title: "Products",
   description: "Products from 531 Workshop.",
   alternates: { canonical: "/shop" },
 };

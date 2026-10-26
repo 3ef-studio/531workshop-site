@@ -97,6 +97,12 @@ test.describe("D2 — sitemap.xml and robots.txt", () => {
     expect(res.headers()["location"]).toContain("/gallery");
   });
 
+  test("legacy /shop/p/* paths permanently redirect to /shop", async ({ request }) => {
+    const res = await request.get("/shop/p/cedar-bar-table", { maxRedirects: 0 });
+    expect([301, 308]).toContain(res.status());
+    expect(res.headers()["location"]).toContain("/shop");
+  });
+
   test("robots.txt is generated and references the sitemap", async ({ request }) => {
     const res = await request.get("/robots.txt");
     expect(res.status()).toBe(200);

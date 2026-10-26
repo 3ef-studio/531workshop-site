@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const product = await getProductBySlug(slug);
   if (!product) return {};
 
-  const title = `${product.title} • 531 Workshop`;
+  const title = product.title;
   const description = product.summary ?? "A 531 Workshop product.";
 
   return {
