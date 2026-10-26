@@ -11,6 +11,7 @@ import {
   MIN_MESSAGE_LENGTH,
   messageHasNoWhitespace,
 } from "@/lib/contactValidation";
+import { emailBaseUrl, emailReplyTo, emailDocument } from "@/lib/email";
 
 type ContactPayload = {
   firstName?: string;
@@ -95,7 +96,7 @@ function truncate(value: string | undefined, max: number): string | null {
  * honeypot check fires first).
  */
 async function logRejectedSubmission(
-  reason: "honeypot" | "message_no_whitespace",
+  reason: "honeypot" | "message_no_whitespace" | "recipient_rate_limited",
   body: ContactPayload,
   req: Request
 ) {
@@ -144,13 +145,6 @@ function normalizeEmail(email: string) {
 function isValidEmail(email: string) {
   // good-enough validation (keep it simple)
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function baseUrlFromRequest(req: Request) {
-  const envBase = process.env.SITE_URL?.trim();
-  if (envBase) return envBase.replace(/\/+$/, "");
-  const url = new URL(req.url);
-  return `${url.protocol}//${url.host}`;
 }
 
 function generateToken() {
@@ -221,6 +215,30 @@ export async function POST(req: Request) {
     try {
       await client.query("BEGIN");
 
+      // Per-recipient confirmation cap: without this, anyone can type a
+      // third party's email address into this form repeatedly and make the
+      // site email them over and over — each message is a spam-complaint
+      // opportunity against our own sending domain, independent of whether
+      // the submission itself looks like spam. No schema change needed:
+      // every token has a fixed 24h expiry, so `expires_at` alone tells us
+      // when it was created. Limits: 1/hour, 3/24h per address.
+      const capCheck = await client.query<{ last_hour: string; last_day: string }>(
+        `
+        SELECT
+          count(*) FILTER (WHERE expires_at > now() + interval '23 hours') AS last_hour,
+          count(*) FILTER (WHERE expires_at > now()) AS last_day
+        FROM app.email_verification_tokens
+        WHERE email = $1
+        `,
+        [email]
+      );
+      const { last_hour, last_day } = capCheck.rows[0] ?? { last_hour: "0", last_day: "0" };
+      if (Number(last_hour) >= 1 || Number(last_day) >= 3) {
+        await client.query("ROLLBACK");
+        await logRejectedSubmission("recipient_rate_limited", body, req);
+        return NextResponse.json({ ok: true, message: "Submitted. Please check your email to confirm." });
+      }
+
       // Insert the lead (unverified)
       // NOTE: requires `ALTER TABLE app.leads ADD COLUMN project_context JSONB;`
       // in the target database — see docs note in this file's PR/commit.
@@ -270,13 +288,13 @@ export async function POST(req: Request) {
       await client.query("COMMIT");
 
       // Send verification email
-      const baseUrl = baseUrlFromRequest(req);
+      const baseUrl = emailBaseUrl(req);
       const verifyUrl = `${baseUrl}/api/contact/verify?token=${encodeURIComponent(token)}`;
 
       const from = process.env.EMAIL_FROM;
       if (!from) {
         // still return ok, but log a clear error
-        console.error("Missing RESEND_FROM env var (e.g., '531 Workshop <no-reply@yourdomain.com>').");
+        console.error("Missing EMAIL_FROM env var (e.g., '531 Workshop <no-reply@yourdomain.com>').");
         return NextResponse.json({ ok: true, message: "Submitted. Please check your email to confirm." });
       }
 
@@ -285,33 +303,51 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true, message: "Submitted. Please check your email to confirm." });
       }
 
+      // No user-supplied data is interpolated into this email — only the
+      // server-generated verifyUrl — so no escaping is needed here.
+      const subject = "Confirm your request — 531 Workshop";
+      const bodyHtml = `
+        <h2 style="margin: 0 0 12px;">Confirm your request</h2>
+        <p style="margin: 0 0 12px;">
+          Thanks for reaching out to 531 Workshop. Please confirm your request by clicking the button below:
+        </p>
+        <p style="margin: 18px 0;">
+          <a href="${verifyUrl}"
+             style="display:inline-block;padding:10px 14px;border-radius:12px;background:#111;color:#fff;text-decoration:none;">
+            Confirm request
+          </a>
+        </p>
+        <p style="margin: 0 0 8px; color:#555;">
+          If the button doesn’t work, copy and paste this link:
+        </p>
+        <p style="margin: 0; color:#555; word-break: break-all;">
+          ${verifyUrl}
+        </p>
+        <p style="margin-top: 18px; color:#777; font-size: 12px;">
+          This link expires in 24 hours. If you didn’t contact 531 Workshop, you can ignore
+          this email — we won’t contact you again.
+        </p>
+      `;
+      const bodyText = `Confirm your request
+
+Thanks for reaching out to 531 Workshop. Please confirm your request using the link below:
+
+${verifyUrl}
+
+This link expires in 24 hours.
+
+If you didn't contact 531 Workshop, you can ignore this email — we won't contact you again.
+`;
+
+      const replyTo = emailReplyTo();
+
       await resend.emails.send({
         from,
         to: email,
-        subject: "Confirm your request — 531 Workshop",
-        html: `
-          <div style="font-family: ui-sans-serif, system-ui; line-height: 1.5;">
-            <h2 style="margin: 0 0 12px;">Confirm your request</h2>
-            <p style="margin: 0 0 12px;">
-              Thanks for reaching out to 531 Workshop. Please confirm your request by clicking the button below:
-            </p>
-            <p style="margin: 18px 0;">
-              <a href="${verifyUrl}"
-                 style="display:inline-block;padding:10px 14px;border-radius:12px;background:#111;color:#fff;text-decoration:none;">
-                Confirm request
-              </a>
-            </p>
-            <p style="margin: 0 0 8px; color:#555;">
-              If the button doesn’t work, copy and paste this link:
-            </p>
-            <p style="margin: 0; color:#555; word-break: break-all;">
-              ${verifyUrl}
-            </p>
-            <p style="margin-top: 18px; color:#777; font-size: 12px;">
-              This link expires in 24 hours.
-            </p>
-          </div>
-        `,
+        subject,
+        html: emailDocument(subject, bodyHtml),
+        text: bodyText,
+        ...(replyTo ? { replyTo } : {}),
       });
 
       return NextResponse.json({ ok: true, message: "Submitted. Please check your email to confirm." });

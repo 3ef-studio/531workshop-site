@@ -533,4 +533,3 @@ If Stage 1 is implemented in a future mission, verify:
    - Whether the client wants the honeypot/content-check failure path to look like success
      (silent no-op, recommended, keeps the bot from adapting) or an explicit rejection —
      this is a product decision, not a technical one.
-</content>

@@ -193,8 +193,17 @@ describe("POST /api/contact — success path (mocked DB + Resend)", () => {
     expect(sql.some((s) => /COMMIT/i.test(s))).toBe(true);
 
     expect(h.send).toHaveBeenCalledTimes(1);
-    expect(h.send.mock.calls[0][0]).toMatchObject({ to: "jane@example.com" });
+    const sent = h.send.mock.calls[0][0];
+    expect(sent).toMatchObject({ to: "jane@example.com" });
     expect(h.release).toHaveBeenCalled();
+
+    // Full HTML document + plain-text alternative, not a bare fragment.
+    expect(sent.html).toContain("<!doctype html>");
+    expect(sent.html).toContain("<title>");
+    expect(sent.text).toBeTruthy();
+    expect(sent.text).toContain("Confirm your request");
+    // No EMAIL_REPLY_TO configured in the test environment — key omitted.
+    expect(sent).not.toHaveProperty("replyTo");
   });
 
   it("normalizes the email to lowercase before storing", async () => {
@@ -203,6 +212,67 @@ describe("POST /api/contact — success path (mocked DB + Resend)", () => {
       /INSERT INTO app\.leads/i.test(String(c[0])),
     );
     expect(leadInsert?.[1]?.[2]).toBe("jane@example.com");
+  });
+
+  it("sets Reply-To on the confirmation email when EMAIL_REPLY_TO is configured", async () => {
+    vi.stubEnv("EMAIL_REPLY_TO", "hello@531workshop.com");
+    await post(validBody);
+    expect(h.send.mock.calls[0][0]).toMatchObject({ replyTo: "hello@531workshop.com" });
+  });
+});
+
+describe("POST /api/contact — per-recipient confirmation cap", () => {
+  function stubCapCounts(lastHour: number, lastDay: number) {
+    h.query.mockImplementation(async (sql: string) => {
+      if (/FROM app\.email_verification_tokens/i.test(sql) && /FILTER/i.test(sql)) {
+        return { rows: [{ last_hour: String(lastHour), last_day: String(lastDay) }] };
+      }
+      if (/RETURNING id/i.test(sql)) return { rows: [{ id: "lead-1" }] };
+      return { rows: [] };
+    });
+  }
+
+  it("blocks a submission when the address already has a confirmation sent in the last hour", async () => {
+    stubCapCounts(1, 1);
+    const res = await post(validBody);
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ ok: true });
+
+    expect(
+      h.query.mock.calls.some((c) => /INSERT INTO app\.leads/i.test(String(c[0]))),
+    ).toBe(false);
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("blocks a submission when the address has hit the 3-per-24-hour cap", async () => {
+    stubCapCounts(0, 3);
+    const res = await post(validBody);
+    expect(res.status).toBe(200);
+    expect(
+      h.query.mock.calls.some((c) => /INSERT INTO app\.leads/i.test(String(c[0]))),
+    ).toBe(false);
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("logs the rate-limited attempt to app.contact_rejections", async () => {
+    stubCapCounts(1, 1);
+    await post(validBody);
+
+    const call = h.query.mock.calls.find((c) =>
+      /INSERT INTO app\.contact_rejections/i.test(String(c[0])),
+    );
+    expect(call).toBeTruthy();
+    expect((call?.[1] as unknown[])[0]).toBe("recipient_rate_limited");
+  });
+
+  it("allows a submission when under both limits", async () => {
+    stubCapCounts(0, 2);
+    const res = await post(validBody);
+    expect(res.status).toBe(200);
+    expect(
+      h.query.mock.calls.some((c) => /INSERT INTO app\.leads/i.test(String(c[0]))),
+    ).toBe(true);
+    expect(h.send).toHaveBeenCalledTimes(1);
   });
 });
 

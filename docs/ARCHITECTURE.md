@@ -317,4 +317,3 @@ decisions made this project. The broader, longer-standing decisions:
    legacy `id` (so `lib/hero-data.ts`'s existing `HERO_SLIDE_IDS` list doesn't need to
    change) alongside a new, URL-facing `slug` used for routing and for the Contact
    project-context handoff. See `docs/DECISIONS.md`.
-</content>

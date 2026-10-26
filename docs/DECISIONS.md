@@ -83,4 +83,23 @@ Reasoning: the Hero and the Gallery link already cover custom-project inspiratio
 home page; a second "Featured work"-style section pointing at the Gallery would have been
 redundant. A Shop preview instead gives the purchasable catalog a home-page entry point it
 didn't have before.
-</content>
+
+### Email confirmation moved from a bare `GET` to a `GET` (lookup) + `POST` (confirm) pair
+`GET /api/contact/verify?token=…` used to do everything — mark the lead verified, mark the
+token used, email the owner — the instant the link was visited. As of 2026-10-26, `GET` is
+a side-effect-free lookup that renders a small "Confirm your request?" page; only
+submitting that page's one-button form (`POST`) performs the real confirmation.
+
+Reasoning: a plain `GET` is exactly the kind of request email security gateways (Outlook
+Safe Links, Proofpoint, Mimecast, and similar) and some automated tools visit
+automatically, with no human involved — there was no way to tell a genuine click apart
+from an automated visit. This is the most likely explanation for several bot-submitted
+leads in the 2026-09 spam wave getting marked verified far faster than a human plausibly
+would (`docs/CONTACT_SPAM_INVESTIGATION.md`). The trade-off is real and was weighed
+explicitly, not glossed over: every genuine customer now needs one extra click after
+opening the confirmation email. That cost was accepted because (a) it's a single click, in
+a context (a freshly-opened email link) that's already a distinct interaction, not an
+interruption of something else in progress, and (b) we have concrete evidence the gap it
+closes was already being exploited, not just a theoretical risk. Ported from the same
+lesson applied in the Cosmo project — see `docs/EMAIL_DELIVERABILITY_DESIGN.md`.
+

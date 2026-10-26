@@ -66,7 +66,8 @@ Next.js pulls `sharp` in transitively. `images-incoming/` is gitignored. The cur
   default Vercel ⇄ GitHub integration on `git@github.com:3ef-studio/531workshop-site.git`,
   branch `main`.
 - **Environment variables** must be configured in the hosting platform: `DATABASE_URL`,
-  `RESEND_API_KEY`, `EMAIL_FROM`, `CONTACT_TO_EMAIL`, `NEXT_PUBLIC_SITE_URL`, `SITE_URL`,
+  `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` (optional — Reply-To on the confirmation
+  email only), `CONTACT_TO_EMAIL`, `NEXT_PUBLIC_SITE_URL`, `SITE_URL`,
   `NEXT_PUBLIC_SHOPIFY_DOMAIN`, `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN`, and optionally
   `NEXT_PUBLIC_GA_ID` / `PGSSLMODE` / `POSTGRES_URL`.
 - **Database provisioning is out of band.** The `app.leads` and

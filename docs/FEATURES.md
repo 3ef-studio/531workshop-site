@@ -328,6 +328,14 @@ error → "Network error. Please try again."
   `lib/contactOptions.ts` (silently dropped if invalid — these are low-stakes optional
   fields; the submission is not rejected over them), and truncates `dimensions`. An
   entirely-empty context serializes to `null`.
+- **Per-recipient confirmation cap:** before inserting the lead, counts how many
+  confirmation tokens already exist for that email address in the last hour / 24 hours
+  (via `app.email_verification_tokens.expires_at`, which has a fixed 24h offset from
+  creation — no extra column needed). Over 1/hour or 3/24h → rolls back, logs
+  `recipient_rate_limited` to `app.contact_rejections`, and returns the same silent-success
+  response as the honeypot. Stops the form being used to repeatedly email a third party who
+  never asked for it — a different risk from per-IP rate limiting (see `TECHNICAL_DEBT.md`
+  A16).
 - `new Pool({ connectionString: DATABASE_URL || POSTGRES_URL, ssl: PGSSLMODE==="disable" ?
   false : { rejectUnauthorized: false } })` at module scope.
 - Transaction: `INSERT INTO app.leads (…, verified=FALSE, source='contact', referer, ip,
@@ -339,37 +347,62 @@ error → "Network error. Please try again."
   production out-of-band; not tracked by any migration in this repo (see
   `TECHNICAL_DEBT.md` A8).
 - After commit: Resend `emails.send` with a confirm button/link to
-  `{SITE_URL || derived}/api/contact/verify?token=<raw token>`.
+  `{emailBaseUrl(req)}/api/contact/verify?token=<raw token>` — `lib/email.ts`'s
+  `emailBaseUrl` validates `SITE_URL` (a malformed value is treated as unset) and falls
+  back to the request's own origin either way. The email is a full HTML document
+  (`emailDocument`) with a plain-text alternative and a "if you didn't contact 531
+  Workshop, ignore this" line, plus an optional `Reply-To` from `EMAIL_REPLY_TO` if set
+  (see `TECHNICAL_DEBT.md` A14–A16 and `docs/EMAIL_DELIVERABILITY_DESIGN.md`).
 - Missing `EMAIL_FROM` or `RESEND_API_KEY` → returns `ok: true` anyway (only logs).
 - Any thrown error → `ROLLBACK`, 500 `{ ok:false, error:"Something went wrong…" }`.
 
-### Back end — `GET /api/contact/verify`
+### Back end — `GET /api/contact/verify` (read-only) and `POST` (the actual confirmation)
 
+Splitting this into two steps — rather than one `GET` that did everything — closes a real
+gap: email security gateways (Outlook Safe Links, Proofpoint, Mimecast, and similar) and
+some automated tools visit every link in an inbound email automatically, with no human
+involved. A `GET` that performs real work can't tell that apart from a genuine click — see
+`TECHNICAL_DEBT.md` A14 for evidence this most likely already happened.
+
+**`GET` — side-effect-free lookup:**
 - Missing token → 400 text.
-- Transaction: `SELECT … FROM app.email_verification_tokens evt JOIN app.leads l …
-  WHERE evt.token_hash=$1 AND evt.used_at IS NULL AND evt.expires_at > now() LIMIT 1`
-  (now also selecting `l.project_context`).
-- No row → `ROLLBACK`, 400 text ("invalid or has expired… resubmit").
-- If `!row.verified` → `UPDATE app.leads SET verified=TRUE, verified_at=now()`.
-- Always `UPDATE app.email_verification_tokens SET used_at=now()`; commit.
+- `SELECT 1 FROM app.email_verification_tokens WHERE token_hash=$1 AND used_at IS NULL AND
+  expires_at > now()` — a plain read, no transaction.
+- No row → 400 text ("invalid or has expired… resubmit").
+- Valid → renders a small static HTML page (`emailDocument`-wrapped) with a
+  `<form method="post">` carrying the token in a hidden field and one "Confirm request"
+  button. **Nothing is written and no email is sent at this point.**
+
+**`POST` — the real confirmation, only reachable by submitting that form:**
+- Reads `token` from the form body (`application/x-www-form-urlencoded`).
+- **Atomic claim:** `UPDATE app.email_verification_tokens SET used_at=now() WHERE
+  token_hash=$1 AND used_at IS NULL AND expires_at > now() RETURNING id, lead_id` — a
+  single conditional statement, so only one of two overlapping requests for the same token
+  can ever get a row back (closes a race where two near-simultaneous confirms could
+  previously both send the internal notification — `TECHNICAL_DEBT.md` A15). No row → 400
+  text, unchanged wording.
+- Row claimed → `SELECT … FROM app.leads WHERE id=$1`; if `!verified` →
+  `UPDATE app.leads SET verified=TRUE, verified_at=now()`; commit.
 - If `CONTACT_TO_EMAIL`, `EMAIL_FROM`, `RESEND_API_KEY` all present → Resend a "New
-  verified inquiry" email to the shop. The email:
+  verified inquiry" email to the shop (full HTML document + plain-text alternative, same
+  as the confirmation email). The email:
   - HTML-escapes every user-supplied/free-text value (name, email, phone, message,
-    dimensions) via a local `escapeHtml()` helper — the plain-text subject-line name is
+    dimensions) via `lib/email.ts`'s `escapeHtml()` — the plain-text subject-line name is
     intentionally left unescaped, since a mail header isn't HTML.
   - Presentation-formats the phone number for known 10/11-digit US formats
     (`formatPhoneForDisplay`), leaving anything else as entered.
   - Formats the submitted-at timestamp in `America/Chicago` via `Intl.DateTimeFormat`
     (`formatBusinessTimestamp`) — correct across DST without manual offset math.
-  - Renders a project-context block (`renderProjectContext`) only when one exists, showing
-    only the fields actually present ("Inspired by:" title, "Category:", "Project type:",
-    "Approx. dimensions:", "Timeframe:") — and suppressing "Category:" specifically when it
-    equals the customer's selected "Project type:" (avoids showing the same word twice).
-  - **Does not currently set a `Reply-To` header to the customer's email** — the shop owner
-    can read the customer's email address in the body but can't just hit "Reply" to respond
-    directly. See `TECHNICAL_DEBT.md` (new item).
+  - Renders a project-context block (`projectContextLines` → separate HTML/text
+    renderers) only when one exists, showing only the fields actually present ("Inspired
+    by:" title, "Category:", "Project type:", "Approx. dimensions:", "Timeframe:") — and
+    suppressing "Category:" specifically when it equals the customer's selected "Project
+    type:" (avoids showing the same word twice).
+  - **Sets `Reply-To` to the customer's own email** — the shop owner can hit "Reply"
+    directly instead of copying the address out of the body (`TECHNICAL_DEBT.md` A12,
+    resolved).
   Else `console.warn`.
-- 302 → `/contact?confirmed=1`.
+- 303 → `/contact?confirmed=1` (303 so the browser follows with a `GET`, not a re-`POST`).
 
 `/contact` page reads `searchParams`: `?confirmed=1` → green confirmation banner;
 `?error=expired` / other → red banner; `?project=<slug>` → Gallery context card (above).
@@ -461,4 +494,3 @@ none of the custom events are wired to GA — they only target Plausible. See
   `ClientEvent`, `CtaTrack`, `ConfigurableAddToCart`, `buyButtonUI.ts`, `lib/portfolio.ts`,
   `lib/newsletter/dde.ts`, `/api/shopify/cart`, `/api/shopify/product`, `theme-a.css`,
   `theme-c.css`, `/gallery1`.
-</content>

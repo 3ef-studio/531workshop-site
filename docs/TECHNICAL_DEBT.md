@@ -143,14 +143,57 @@ obligations for the business.
 `Referer` headers. The endpoint redirects immediately and the token is single‑use +
 24h‑scoped, so exposure is limited, but a POST body or path segment would be cleaner.
 
-### A12. Internal notification email has no `Reply-To` set to the customer — **[Confirmed]**
+### A12. Internal notification email has no `Reply-To` set to the customer — **[Resolved 2026-10-26]**
 `app/api/contact/verify/route.ts`'s `resend.emails.send({...})` call for the internal
-"New verified inquiry" notification does not set a `replyTo` field. The customer's email
-address is visible in the rendered body, but the shop owner can't just hit "Reply" in their
-mail client to respond directly to the customer — they have to copy the address out
-manually first. Low severity (a workaround exists), but a real, currently-unaddressed
-usability gap. Fix: add `replyTo: row.email` (unescaped — the SDK sets a real header field,
-not HTML) to the `emails.send` call.
+"New verified inquiry" notification now sets `replyTo: row.email` — the shop owner can hit
+"Reply" directly instead of copying the customer's address out of the body by hand.
+Implemented as part of the broader email-deliverability work ported from the Cosmo
+project — see `docs/EMAIL_DELIVERABILITY_DESIGN.md`.
+
+### A14. Email verification previously performed real work on a bare `GET` — **[Resolved 2026-10-26]**
+`GET /api/contact/verify` used to mark the lead verified, mark the token used, and send the
+internal notification, all from a plain link visit. Email security gateways (Outlook Safe
+Links, Proofpoint, Mimecast, and similar) and some automated tools visit every link in an
+inbound email automatically, with no human involved — a `GET` is conventionally expected to
+be side-effect-free, so this had no way to tell a genuine click apart from an automated
+visit. This is the most likely explanation for several bot-submitted leads in the 2026-09
+spam wave (`docs/CONTACT_SPAM_INVESTIGATION.md`) getting marked `verified = TRUE` far faster
+than a human plausibly would.
+
+**Fix:** `GET` is now a pure, side-effect-free lookup — a valid token renders a small
+"Confirm your request?" page with a one-button form; nothing is written, no email is sent.
+The actual confirmation only happens on `POST` (that form's submission), which a passive
+link-scanner doesn't trigger. Customer-facing cost: one extra click after opening the email
+link. See `docs/DECISIONS.md` for the trade-off reasoning.
+
+### A15. Two overlapping confirm requests for the same token could both send the internal notification — **[Resolved 2026-10-26]**
+The old verify route read the token with a plain `SELECT` and separately marked it used
+with an unconditional `UPDATE`, with no atomic guard between the two. Two near-simultaneous
+requests for the same token (a double-click, or a scanner request racing a genuine one)
+could both pass the initial check and both send "New verified inquiry" to the owner.
+
+**Fix:** the token is now claimed with a single `UPDATE ... SET used_at = now() WHERE
+token_hash = $1 AND used_at IS NULL AND expires_at > now() RETURNING ...` — Postgres's
+default `READ COMMITTED` isolation means only one of two overlapping requests can ever see
+`used_at IS NULL` and win this update; the other gets zero rows back and does nothing
+further. Covered by a test that fires the same token through `POST` twice and asserts
+exactly one notification is sent.
+
+### A16. No per-recipient limit on confirmation emails — **[Resolved 2026-10-26]**
+Every submission that passed validation sent a confirmation email to whatever address was
+typed in, with no limit — anyone could repeatedly enter a third party's address and make
+the site email them over and over, independent of whether the submission itself looked
+like spam. Each unwanted message is a spam-complaint opportunity against the sending
+domain's own reputation. This is a different risk from A1's per-IP rate limiting (judged a
+weak fit against the observed bot, which rotates IPs) — this one limits by *recipient*.
+
+**Fix:** before inserting a lead, `app/api/contact/route.ts` now counts confirmation tokens
+already created for that email address (`app.email_verification_tokens.expires_at`, since
+every token has a fixed 24h expiry — no schema change needed) and rejects at 1/hour or
+3/24h per address. Over the limit → logged to `app.contact_rejections` with reason
+`recipient_rate_limited`, same silent-success response as the honeypot (no signal to the
+submitter). A genuine customer resubmitting within the hour already has a valid link from
+the first submission.
 
 ### A13. The message content-shape spam check is intentionally narrow — **[Deferred, by design]**
 `lib/contactValidation.ts`'s `messageHasNoWhitespace` (used by `app/api/contact/route.ts`)

@@ -16,11 +16,12 @@ Names present in the local `.env` (gitignored, not committed):
 
 | Name | Used by | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `lib/site.ts` → `SITE.url` | Canonical/base URL for metadata (`metadataBase`, OpenGraph). Falls back to `http://localhost:3000`. |
-| `SITE_URL` | `app/api/contact/route.ts` (`baseUrlFromRequest`) | Base URL used to build the email verification link. Falls back to the request's protocol+host. |
+| `NEXT_PUBLIC_SITE_URL` | `lib/site.ts` → `SITE.url` | Canonical/base URL for metadata (`metadataBase`, OpenGraph, sitemap, robots). Falls back to `http://localhost:3000` — was unset in production for months; see `TECHNICAL_DEBT.md` D4. |
+| `SITE_URL` | `lib/email.ts` (`emailBaseUrl`) | Base URL used to build the email verification link, shared by both contact routes. Validated — a malformed value is treated the same as unset. Falls back to the request's own protocol+host either way (has never actually been set in production; that fallback is what's been doing the real work all along). |
 | `DATABASE_URL` | `app/api/contact/route.ts`, `app/api/contact/verify/route.ts` | Postgres connection string for the `pg` `Pool`. |
 | `RESEND_API_KEY` | both contact routes (`new Resend(...)`) | Auth for the Resend email API. |
 | `EMAIL_FROM` | both contact routes | `From:` address/name for all outgoing email. |
+| `EMAIL_REPLY_TO` | `lib/email.ts` (`emailReplyTo`) | **Optional.** Reply-To for the *confirmation* email only (e.g. a monitored inbox) — omit to leave it unset. Distinct from the internal notification's Reply-To, which is always the customer's own address, set directly in `app/api/contact/verify/route.ts`. |
 | `CONTACT_TO_EMAIL` | `app/api/contact/verify/route.ts` | Recipient of the internal "new verified inquiry" notification. |
 | `NEXT_PUBLIC_SHOPIFY_DOMAIN` | `components/shopify/ShopifyProductBuyButton.tsx`, `components/shopify/buyButtonUI.ts`, `app/api/shopify/product/route.ts`, `app/api/shopify/cart/route.ts` | Shopify storefront domain (e.g. `xxx.myshopify.com`). |
 | `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN` | same four files | Shopify Storefront API public access token. |
@@ -36,8 +37,9 @@ Names referenced in code but **not** in the committed `.env` (optional / fallbac
 
 > Note: `app/api/shopify/cart/route.ts:12` throws an error string that misspells the
 > variable ("SHOPIFY_STOREFRRONT_ACCESS_TOKEN") — cosmetic only; the code reads the
-> correct `NEXT_PUBLIC_*` names. Comments in `app/api/contact/route.ts` also refer to a
-> `RESEND_FROM` var that the code does not use (it uses `EMAIL_FROM`).
+> correct `NEXT_PUBLIC_*` names. (The similar stale `RESEND_FROM` reference in
+> `app/api/contact/route.ts`'s own error logging has been fixed — it now correctly says
+> `EMAIL_FROM`.)
 
 ---
 
@@ -100,9 +102,17 @@ Names referenced in code but **not** in the committed `.env` (optional / fallbac
   internal "new verified inquiry" notification to the shop.
 - **Client:** `resend` `^6.6.0`, `new Resend(process.env.RESEND_API_KEY)`.
 - **Implementation files:** `app/api/contact/route.ts` (confirmation email),
-  `app/api/contact/verify/route.ts` (internal notification).
-- **From / to:** `from = EMAIL_FROM`; confirmation `to = <lead email>`; notification
-  `to = CONTACT_TO_EMAIL`.
+  `app/api/contact/verify/route.ts` (internal notification), `lib/email.ts` (shared
+  helpers both import).
+- **From / to / reply-to:** `from = EMAIL_FROM`; confirmation `to = <lead email>`, optional
+  `replyTo = EMAIL_REPLY_TO` if set; notification `to = CONTACT_TO_EMAIL`,
+  `replyTo = <lead email>` (A12).
+- **Deliverability hardening (2026-10-26, ported from the Cosmo project's own email work —
+  see `docs/EMAIL_DELIVERABILITY_DESIGN.md`):** both emails are now a full HTML document
+  (`lib/email.ts`'s `emailDocument` — doctype, charset, title) with a plain-text
+  alternative, not a bare HTML-only fragment; the confirmation email adds a "if you didn't
+  contact us, ignore this" line. See `TECHNICAL_DEBT.md` A14–A16 for the confirm-on-POST
+  split, the atomic token claim, and the per-recipient send cap.
 - **Failure behavior:**
   - **The routes never check the `{ data, error }` value returned by
     `resend.emails.send` — only a thrown exception is handled.** The Resend SDK resolves
@@ -118,10 +128,11 @@ Names referenced in code but **not** in the committed `.env` (optional / fallbac
     arrive. If `resend.emails.send` **throws** (e.g. network error), it propagates to the
     outer `catch` → `ROLLBACK` (a no‑op after `COMMIT`) → 500, so the user sees an error
     but the lead + token rows remain in the DB.
-  - `verify`: the internal email is wrapped so that missing env vars just `console.warn`
-    and skip; a `send` throw there propagates to the outer catch → `ROLLBACK` (after the
-    verification updates were already committed) → plain‑text 500, and the user never
-    reaches `/contact?confirmed=1` even though the lead is verified.
+  - `verify` (now `POST /api/contact/verify`, reached via the confirm page `GET` renders —
+    see `TECHNICAL_DEBT.md` A14): the internal email is wrapped so that missing env vars
+    just `console.warn` and skip; a `send` throw there propagates to the outer catch →
+    `ROLLBACK` (after the verification updates were already committed) → plain‑text 500,
+    and the user never reaches `/contact?confirmed=1` even though the lead is verified.
 - **Email content injection:** resolved. The internal notification now runs every
   user-supplied/free-text value (name, email, phone, message, and any project-context
   `dimensions`) through a local `escapeHtml()` helper before interpolating it into the HTML

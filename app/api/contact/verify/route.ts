@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import crypto from "crypto";
 import { getCategoryLabel, isGalleryCategory } from "@/lib/gallery-data";
 import { getProjectTypeLabel, getTimeframeLabel } from "@/lib/contactOptions";
+import { escapeHtml, emailDocument } from "@/lib/email";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
@@ -26,20 +27,6 @@ type ProjectContext = {
   dimensions?: string;
   timeframe?: string;
 };
-
-/**
- * HTML-escaping for every user-supplied or free-text value rendered into the
- * internal notification email (name, email, phone, message, dimensions).
- * Trusted static labels/markup are never passed through this.
- */
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 /**
  * Presentation-only phone formatting for the internal email. Never touches
@@ -82,20 +69,19 @@ function formatBusinessTimestamp(dateLike: string): string {
 }
 
 /**
- * Renders the "project context" block for the internal notification email.
- * Only includes lines that actually have a value — never invents content.
- * When the Gallery category and the customer-selected Project Type are the
- * same underlying value, the separate Category line is suppressed (showing
- * both would just repeat the same word twice).
+ * Resolves the "project context" into label/value pairs — only the fields
+ * actually present, never invented. Shared by both the HTML and plain-text
+ * renderers below so the "suppress Category when it equals Project type"
+ * rule only lives in one place.
  */
-function renderProjectContext(raw: unknown): string {
-  if (!raw || typeof raw !== "object") return "";
+function projectContextLines(raw: unknown): { label: string; value: string }[] {
+  if (!raw || typeof raw !== "object") return [];
   const ctx = raw as ProjectContext;
 
-  const lines: string[] = [];
+  const lines: { label: string; value: string }[] = [];
 
   if (ctx.galleryTitle) {
-    lines.push(`<strong>Inspired by:</strong> ${escapeHtml(ctx.galleryTitle)}`);
+    lines.push({ label: "Inspired by", value: ctx.galleryTitle });
   }
 
   const categoryMatchesProjectType =
@@ -106,30 +92,68 @@ function renderProjectContext(raw: unknown): string {
     isGalleryCategory(ctx.galleryCategory) &&
     !categoryMatchesProjectType
   ) {
-    lines.push(`<strong>Category:</strong> ${escapeHtml(getCategoryLabel(ctx.galleryCategory))}`);
+    lines.push({ label: "Category", value: getCategoryLabel(ctx.galleryCategory) });
   }
 
   if (ctx.projectType) {
     const label = getProjectTypeLabel(ctx.projectType);
-    if (label) lines.push(`<strong>Project type:</strong> ${escapeHtml(label)}`);
+    if (label) lines.push({ label: "Project type", value: label });
   }
   if (ctx.dimensions) {
-    lines.push(`<strong>Approx. dimensions:</strong> ${escapeHtml(ctx.dimensions)}`);
+    lines.push({ label: "Approx. dimensions", value: ctx.dimensions });
   }
   if (ctx.timeframe) {
     const label = getTimeframeLabel(ctx.timeframe);
-    if (label) lines.push(`<strong>Timeframe:</strong> ${escapeHtml(label)}`);
+    if (label) lines.push({ label: "Timeframe", value: label });
   }
 
-  if (lines.length === 0) return "";
+  return lines;
+}
 
+function renderProjectContextHtml(lines: { label: string; value: string }[]): string {
+  if (lines.length === 0) return "";
   return `
     <div style="margin:0 0 16px;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa;">
-      ${lines.map((l) => `<p style="margin:0 0 6px;">${l}</p>`).join("\n")}
+      ${lines.map((l) => `<p style="margin:0 0 6px;"><strong>${escapeHtml(l.label)}:</strong> ${escapeHtml(l.value)}</p>`).join("\n")}
     </div>
   `;
 }
 
+function renderProjectContextText(lines: { label: string; value: string }[]): string {
+  if (lines.length === 0) return "";
+  return lines.map((l) => `${l.label}: ${l.value}`).join("\n") + "\n\n";
+}
+
+/** A tiny, static HTML page — no user data — shown after a valid token is
+ *  looked up, before anything is actually confirmed. See POST below for why
+ *  the real work waits for a deliberate form submission rather than this GET. */
+function confirmPageHtml(token: string): string {
+  const subject = "Confirm your request — 531 Workshop";
+  const body = `
+    <h1 style="margin:0 0 12px;font-size:20px;">Confirm your request</h1>
+    <p style="margin:0 0 20px;color:#555;">
+      Click below to confirm your request to 531 Workshop.
+    </p>
+    <form method="post" action="/api/contact/verify">
+      <input type="hidden" name="token" value="${escapeHtml(token)}" />
+      <button type="submit" style="display:inline-block;padding:12px 20px;border-radius:12px;background:#111;color:#fff;border:none;font-size:15px;cursor:pointer;">
+        Confirm request
+      </button>
+    </form>
+  `;
+  return emailDocument(subject, body);
+}
+
+/**
+ * Read-only token lookup. Deliberately has no side effects: email security
+ * gateways (Outlook Safe Links, Proofpoint, Mimecast and similar) and some
+ * automated tools visit every link in an inbound email automatically, with
+ * no human involved. A bare GET that performs the real verification can't
+ * tell that apart from a genuine click — see
+ * docs/EMAIL_DELIVERABILITY_DESIGN.md §3.4 and docs/TECHNICAL_DEBT.md for
+ * evidence this most likely already happened. The actual confirmation only
+ * ever happens in POST, below.
+ */
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -141,17 +165,81 @@ export async function GET(req: Request) {
 
     const tokenHash = hashToken(token);
 
+    const result = await pool.query(
+      `
+      SELECT 1 FROM app.email_verification_tokens
+      WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+      LIMIT 1
+      `,
+      [tokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      return new NextResponse(
+        "This confirmation link is invalid or has expired. Please resubmit the contact form.",
+        { status: 400 }
+      );
+    }
+
+    return new NextResponse(confirmPageHtml(token), {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  } catch (err) {
+    console.error("GET /api/contact/verify error:", err);
+    return new NextResponse("Something went wrong verifying your request. Please try again.", { status: 500 });
+  }
+}
+
+/**
+ * Performs the actual confirmation — only reachable by submitting the form
+ * on the page GET returns above, i.e. a deliberate action, not a passive
+ * link visit.
+ */
+export async function POST(req: Request) {
+  try {
+    const formData = await req.formData();
+    const token = formData.get("token")?.toString().trim();
+
+    if (!token) {
+      return new NextResponse("Missing token.", { status: 400 });
+    }
+
+    const tokenHash = hashToken(token);
+
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
 
-      // Find a valid, unused, unexpired token
-      const tokenRes = await client.query<{
-        token_id: string;
-        lead_id: string;
+      // Atomic claim: exactly one request can ever win this update for a
+      // given token, because it's conditioned on `used_at IS NULL` in the
+      // same statement that sets it. A second, overlapping confirm attempt
+      // for the same token (a double-click, or a scanner racing a genuine
+      // click) gets zero rows back here and does nothing further — closing
+      // the race where two near-simultaneous requests could previously both
+      // send the internal notification (docs/EMAIL_DELIVERABILITY_DESIGN.md
+      // §3.6).
+      const claim = await client.query<{ token_id: string; lead_id: string }>(
+        `
+        UPDATE app.email_verification_tokens
+        SET used_at = now()
+        WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+        RETURNING id AS token_id, lead_id
+        `,
+        [tokenHash]
+      );
+
+      const claimed = claim.rows[0];
+      if (!claimed) {
+        await client.query("ROLLBACK");
+        return new NextResponse(
+          "This confirmation link is invalid or has expired. Please resubmit the contact form.",
+          { status: 400 }
+        );
+      }
+
+      const leadRes = await client.query<{
         email: string;
-        expires_at: string;
-        used_at: string | null;
         first_name: string | null;
         last_name: string | null;
         phone: string | null;
@@ -161,39 +249,16 @@ export async function GET(req: Request) {
         project_context: unknown;
       }>(
         `
-        SELECT
-          evt.id AS token_id,
-          evt.lead_id,
-          evt.email,
-          evt.expires_at,
-          evt.used_at,
-          l.first_name,
-          l.last_name,
-          l.phone,
-          l.message,
-          l.created_at,
-          l.verified,
-          l.project_context
-        FROM app.email_verification_tokens evt
-        JOIN app.leads l ON l.id = evt.lead_id
-        WHERE evt.token_hash = $1
-          AND evt.used_at IS NULL
-          AND evt.expires_at > now()
-        LIMIT 1
+        SELECT email, first_name, last_name, phone, message, created_at, verified, project_context
+        FROM app.leads
+        WHERE id = $1
         `,
-        [tokenHash]
+        [claimed.lead_id]
       );
 
-      const row = tokenRes.rows[0];
-      if (!row) {
-        await client.query("ROLLBACK");
-        return new NextResponse(
-          "This confirmation link is invalid or has expired. Please resubmit the contact form.",
-          { status: 400 }
-        );
-      }
+      const row = leadRes.rows[0];
+      if (!row) throw new Error("Claimed token references a lead that no longer exists.");
 
-      // If already verified, just mark token used and redirect
       if (!row.verified) {
         await client.query(
           `
@@ -201,18 +266,9 @@ export async function GET(req: Request) {
           SET verified = TRUE, verified_at = now()
           WHERE id = $1
           `,
-          [row.lead_id]
+          [claimed.lead_id]
         );
       }
-
-      await client.query(
-        `
-        UPDATE app.email_verification_tokens
-        SET used_at = now()
-        WHERE id = $1
-        `,
-        [row.token_id]
-      );
 
       await client.query("COMMIT");
 
@@ -226,43 +282,61 @@ export async function GET(req: Request) {
         // "&amp;"-style entities to the recipient's mail client.
         const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
         const subjectName = name ? ` (${name})` : "";
+        const subject = `New verified inquiry — 531 Workshop${subjectName}`;
 
-        // Escaped, presentation-formatted values for the HTML body only.
-        const displayName = name ? escapeHtml(name) : "—";
-        const displayEmail = escapeHtml(row.email);
-        const displayPhone = row.phone ? escapeHtml(formatPhoneForDisplay(row.phone)) : "—";
-        const displayMessage = row.message ? escapeHtml(row.message.trim()) : "—";
+        const displayName = name || "—";
+        const displayPhone = row.phone ? formatPhoneForDisplay(row.phone) : "—";
+        const displayMessage = row.message ? row.message.trim() : "—";
         const displayTimestamp = formatBusinessTimestamp(row.created_at);
+        const contextLines = projectContextLines(row.project_context);
 
-        const projectContextHtml = renderProjectContext(row.project_context);
+        const bodyHtml = `
+          <h2 style="margin:0 0 12px;">New verified inquiry</h2>
+          <p style="margin:0 0 8px;"><strong>Name:</strong> ${escapeHtml(displayName)}</p>
+          <p style="margin:0 0 8px;"><strong>Email:</strong> ${escapeHtml(row.email)}</p>
+          <p style="margin:0 0 16px;"><strong>Phone:</strong> ${escapeHtml(displayPhone)}</p>
+          ${renderProjectContextHtml(contextLines)}
+          <p style="margin:0 0 6px;"><strong>Customer message:</strong></p>
+          <div style="padding:12px;border:1px solid #ddd;border-radius:12px;white-space:pre-wrap;">${escapeHtml(displayMessage)}</div>
+          <p style="margin-top:12px;color:#777;font-size:12px;">
+            Submitted: ${displayTimestamp}
+          </p>
+        `;
+
+        // Plain text is NOT HTML-escaped — it's rendered as-is in a
+        // non-HTML context, so escaping would show literal "&amp;"-style
+        // entities to the recipient.
+        const bodyText = `New verified inquiry
+
+Name: ${displayName}
+Email: ${row.email}
+Phone: ${displayPhone}
+
+${renderProjectContextText(contextLines)}Customer message:
+${displayMessage}
+
+Submitted: ${displayTimestamp}
+`;
 
         await resend.emails.send({
           from,
           to,
-          subject: `New verified inquiry — 531 Workshop${subjectName}`,
-          html: `
-            <div style="font-family: ui-sans-serif, system-ui; line-height: 1.5;">
-              <h2 style="margin:0 0 12px;">New verified inquiry</h2>
-              <p style="margin:0 0 8px;"><strong>Name:</strong> ${displayName}</p>
-              <p style="margin:0 0 8px;"><strong>Email:</strong> ${displayEmail}</p>
-              <p style="margin:0 0 16px;"><strong>Phone:</strong> ${displayPhone}</p>
-              ${projectContextHtml}
-              <p style="margin:0 0 6px;"><strong>Customer message:</strong></p>
-              <div style="padding:12px;border:1px solid #ddd;border-radius:12px;white-space:pre-wrap;">${displayMessage}</div>
-              <p style="margin-top:12px;color:#777;font-size:12px;">
-                Submitted: ${displayTimestamp}
-              </p>
-            </div>
-          `,
+          subject,
+          html: emailDocument(subject, bodyHtml),
+          text: bodyText,
+          // The customer's own address — already validated by isValidEmail
+          // on submission and normalized to lowercase, and a header value
+          // rather than HTML, so it isn't escaped here (TECHNICAL_DEBT A12).
+          replyTo: row.email,
         });
       } else {
-        console.warn("Skipping internal email: missing CONTACT_TO_EMAIL and/or RESEND_FROM and/or RESEND_API_KEY.");
+        console.warn("Skipping internal email: missing CONTACT_TO_EMAIL and/or EMAIL_FROM and/or RESEND_API_KEY.");
       }
 
-      // Redirect user to a friendly confirmation state
-      // You can change this to /contact/confirmed if you create that page.
-      const redirectTo = new URL("/contact?confirmed=1", url.origin);
-      return NextResponse.redirect(redirectTo, 302);
+      // Redirect user to a friendly confirmation state. 303 so the browser
+      // follows with a GET rather than re-POSTing the form.
+      const redirectTo = new URL("/contact?confirmed=1", new URL(req.url).origin);
+      return NextResponse.redirect(redirectTo, 303);
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;
@@ -270,7 +344,7 @@ export async function GET(req: Request) {
       client.release();
     }
   } catch (err) {
-    console.error("GET /api/contact/verify error:", err);
+    console.error("POST /api/contact/verify error:", err);
     return new NextResponse("Something went wrong verifying your request. Please try again.", { status: 500 });
   }
 }

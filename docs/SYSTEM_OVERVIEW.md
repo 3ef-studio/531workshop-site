@@ -117,4 +117,3 @@ into a page. The server‑side Storefront GraphQL routes (`/api/shopify/cart`,
   install → `test:e2e` on push to `main` and on every PR, using fake non-secret env values.
   See `docs/TESTING.md`.
 - See `INTEGRATIONS.md` for the full environment‑variable list (names only).
-</content>

@@ -68,14 +68,35 @@ runs first and Playwright just starts the server.
   server-side message window, the content-shape rejection of the observed spam pattern,
   and the `app.contact_rejections` safety-net logging (present for honeypot/shape
   rejections, absent for plain length rejections, and resilient to its own DB failures).
-- `api-contact-verify.test.ts` — `GET /api/contact/verify`: missing/invalid token,
-  successful verification + redirect, already-verified lead, DB error; plus dedicated
-  coverage for the internal-notification email's rendering: project-context block
-  presence/absence/partial rendering, Category-vs-Project-Type redundancy suppression,
-  phone number presentation formatting (10-digit, 11-digit-with-country-code, unrecognized
-  formats, missing phone), the `America/Chicago` submitted-at timestamp (DST-correct via
-  `Intl.DateTimeFormat`), and HTML-escaping of every user-supplied/free-text field
-  (message, dimensions, name, phone).
+  Also covers the email-deliverability work ported from Cosmo (`docs/EMAIL_DELIVERABILITY_DESIGN.md`):
+  the confirmation email is a full `emailDocument` HTML document with a matching plain-text
+  alternative (both containing the confirm URL and the "didn't contact us" line), `replyTo`
+  present only when `EMAIL_REPLY_TO` is set (via `vi.stubEnv`), and a malformed `SITE_URL`
+  falling back to the request origin rather than producing a broken link; and a dedicated
+  `describe("POST /api/contact — per-recipient confirmation cap")` block (a `stubCapCounts`
+  helper) proving an address at or over the 1/hour or 3/24h limit gets no new lead, no
+  token, and no email — just the normal silent-success response and a
+  `recipient_rate_limited` row in `app.contact_rejections` — while an address under both
+  limits is unaffected.
+- `api-contact-verify.test.ts` — split into the two routes `/api/contact/verify` now
+  exposes (`docs/DECISIONS.md`, "Email confirmation moved from a bare `GET`…"):
+  **`GET`** is covered as a pure read-only lookup — valid/unexpired token renders the
+  confirm-page HTML with **zero** DB writes and **zero** Resend calls; invalid/expired
+  token is a 400 with the same no-write/no-email guarantee. **`POST`** (via a `post(token?)`
+  helper that form-encodes the body) covers what the old single `GET` handler used to do:
+  missing/invalid token, successful confirmation + 303 redirect, an already-verified lead,
+  DB error, and — the key correctness test — the atomic claim (§3.6 of the design doc): two
+  overlapping `POST`s for the same token, driven by a stateful mock counter so only the
+  first caller's `UPDATE ... RETURNING` sees `used_at IS NULL`, result in **exactly one**
+  internal-notification send, not two. Also retained from before: dedicated coverage for
+  the internal-notification email's rendering — project-context block presence/absence/
+  partial rendering, Category-vs-Project-Type redundancy suppression, phone number
+  presentation formatting (10-digit, 11-digit-with-country-code, unrecognized formats,
+  missing phone), the `America/Chicago` submitted-at timestamp (DST-correct via
+  `Intl.DateTimeFormat`), HTML-escaping of every user-supplied/free-text field (message,
+  dimensions, name, phone), the full-document `emailDocument` HTML plus its plain-text
+  counterpart, and `replyTo` set to the lead's own email on the notification (TECHNICAL_DEBT
+  A12).
 - `api-shopify-product.test.ts` — `GET /api/shopify/product`: missing handle / env,
   response reshaping, GraphQL errors, unknown handle.
 - `sitemap.test.ts` — `app/sitemap.ts` / `app/robots.ts`: static + product routes, every
