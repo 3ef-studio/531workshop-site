@@ -112,7 +112,9 @@ runs first and Playwright just starts the server.
   homepage; `/gallery2` permanently redirects to `/gallery`; legacy `/shop/p/*` URLs
   permanently redirect to `/shop`; `sitemap.xml` lists the public
   routes plus product and Gallery pages; `robots.txt` allows the public site, disallows
-  `/api/`, and points at the sitemap.
+  `/api/`, and points at the sitemap; every response (pages and API routes alike) carries
+  the baseline security headers, and the CSP explicitly allow-lists the third-party hosts
+  the site actually loads from.
 
 Some tests deliberately assert *current* (imperfect) behavior and reference
 `docs/TECHNICAL_DEBT.md` — e.g. `parsePriceNumber("$175 - $290") === Infinity` (F4) and

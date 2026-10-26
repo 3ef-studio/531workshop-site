@@ -113,3 +113,34 @@ test.describe("D2 — sitemap.xml and robots.txt", () => {
     expect(body).toMatch(/Sitemap:\s*http:\/\/localhost:3000\/sitemap\.xml/i);
   });
 });
+
+test.describe("G4 — security headers", () => {
+  test("every page response carries the baseline security headers", async ({ request }) => {
+    const res = await request.get("/");
+    const headers = res.headers();
+
+    expect(headers["x-content-type-options"]).toBe("nosniff");
+    expect(headers["x-frame-options"]).toBe("SAMEORIGIN");
+    expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    expect(headers["permissions-policy"]).toContain("camera=()");
+    expect(headers["content-security-policy"]).toBeTruthy();
+  });
+
+  test("the CSP explicitly allow-lists the third-party hosts this site actually loads from", async ({ request }) => {
+    const res = await request.get("/");
+    const csp = res.headers()["content-security-policy"];
+
+    // Shopify Buy Button SDK (script) + its internal telemetry (connect) +
+    // its embedded iframe, GA (script/connect), YouTube (frame).
+    expect(csp).toContain("sdks.shopifycdn.com");
+    expect(csp).toContain("monorail-edge.shopifysvc.com");
+    expect(csp).toContain("googletagmanager.com");
+    expect(csp).toContain("youtube-nocookie.com");
+    expect(csp).toContain("object-src 'none'");
+  });
+
+  test("API routes also carry the security headers", async ({ request }) => {
+    const res = await request.get("/robots.txt");
+    expect(res.headers()["x-content-type-options"]).toBe("nosniff");
+  });
+});

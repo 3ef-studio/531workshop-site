@@ -495,10 +495,44 @@ The required environment set must be reverse‑engineered from the code. See
 `NEXT_PUBLIC_SITE_URL` (metadata) and `SITE_URL` (verification links) are separate and can
 disagree; a mismatch produces wrong canonical URLs or broken confirmation links.
 
-### G4. No security headers — **[Confirmed]**
-`next.config.ts` is empty. No CSP, `X-Frame-Options`, `Referrer-Policy`, `HSTS`, or
-`Permissions-Policy`. The site embeds third‑party scripts (shopifycdn, optionally GTM) and
-iframes (YouTube) with no CSP constraining them.
+### G4. No security headers — **[Resolved 2026-10-26]**
+`next.config.ts` was empty — no CSP, `X-Frame-Options`, `Referrer-Policy`, or
+`Permissions-Policy` (`HSTS` was already present, set by Vercel automatically regardless
+of app config).
+
+**Fix:** added a `headers()` function in `next.config.ts` applying, to every route:
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`,
+`Referrer-Policy: strict-origin-when-cross-origin`,
+`Permissions-Policy: camera=(), microphone=(), geolocation=()` (none of these are used
+anywhere on the site), and a `Content-Security-Policy`.
+
+**The CSP's two deliberate `'unsafe-inline'` allowances, and why:**
+- `script-src` allows it for the one first-party, static, non-user-derived inline script
+  in `app/layout.tsx` (the GA bootstrap `<Script id="ga-init">`) — there's no nonce
+  infrastructure in this app to avoid it, and building one (middleware-generated nonce,
+  threaded through `next/headers`) was judged disproportionate effort for a single static
+  script in an app with no other dynamic/user-content rendering surface that script
+  injection could exploit (the contact form's various defenses — escaping, the spam
+  filter, double opt-in — are the actual relevant protection there, not this header). The
+  **host allow-list is still the load-bearing protection**: an unexpected third-party
+  script from any domain not explicitly listed is still blocked regardless of
+  `'unsafe-inline'`, which is the more realistic threat (a compromised/supply-chain'd
+  dependency) than an injected inline `<script>` on this specific app.
+- `style-src` allows it because the app uses inline `style={{...}}` attributes
+  extensively (7 files) for CSS-variable-driven theming — a much lower-severity class of
+  risk than inline script, and removing it would mean refactoring every one of those call
+  sites, out of scope here.
+
+**Verified empirically, not just written and assumed correct:** built production,
+ran it locally, and drove it with Playwright across every page type (home, about,
+gallery landing/category/project, shop/PDP, contact, faq), watching for
+`securitypolicyviolation`-style console messages. Found and fixed one real gap this way
+— the Shopify Buy Button SDK calls its own internal telemetry endpoint
+(`monorail-edge.shopifysvc.com`), which isn't referenced anywhere in this codebase and so
+wasn't anticipated from reading the code alone; it only surfaced by actually loading the
+PDP in a browser. Final pass: zero CSP violations across all pages, Buy Button iframes
+confirmed rendering (3 iframes on a PDP), YouTube embeds confirmed rendering. Regression
+tests in `e2e/seo.spec.ts` (`G4 — security headers`).
 
 ### G5. No tests, no CI — **[Resolved]**
 A Vitest unit/API suite (`test/`) and a Playwright e2e suite (`e2e/`) now exist, along with

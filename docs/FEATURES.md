@@ -419,6 +419,12 @@ Resend; the `SITE_URL` / `NEXT_PUBLIC_SITE_URL` env for correct link generation.
 - `next.config.ts` redirects: `/gallery2` → `/gallery`, and `/shop/p/:slug*` → `/shop` (a
   leftover URL pattern from an older version of the site, still indexed by Google — see
   `TECHNICAL_DEBT.md` D8).
+- `next.config.ts` `headers()`: security headers on every route —
+  `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and
+  a `Content-Security-Policy` explicitly allow-listing the exact third-party hosts the site
+  loads from (Shopify Buy Button + its telemetry endpoint, GA, YouTube) — see
+  `TECHNICAL_DEBT.md` G4 for the full host list and the reasoning behind its two
+  `'unsafe-inline'` allowances.
 
 ---
 
