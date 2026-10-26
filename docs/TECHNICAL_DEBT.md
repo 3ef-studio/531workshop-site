@@ -551,6 +551,10 @@ has been shared outside secure channels.
 - **H6 [Resolved 2026-09-14]** Server‑side `message` previously had no maximum length (A5).
   Now capped at `MAX_MESSAGE_LENGTH` (4000, matching the client) in
   `app/api/contact/route.ts`.
+- **H7 [Resolved 2026-10-26]** `components/Footer.tsx`'s "Built by Three Eagles Forge
+  Studio" credit link pointed at `https://3ef.studio/consulting`, which 404s, on every
+  single page of the site. Found during a broader post-SEO-fix sweep for other silent
+  issues. Fixed to `https://www.3ef.studio/`.
 
 ---
 
@@ -572,3 +576,33 @@ a barnwood side-table shot) were ambiguous enough — near-duplicates, unclear s
 unclear category — that they were left out of `GALLERY_IMAGES` rather than guessed at.
 They were never deleted, just not catalogued. Revisit with the client if a fuller Gallery
 is wanted; low urgency since nothing user-facing depends on them.
+
+---
+
+## J. Performance
+
+### J1. `Hero.tsx` eagerly loaded every rotation image on initial page load — **[Resolved 2026-10-26]**
+Found via a live Lighthouse audit of the production homepage (prompted by "what other
+silent issues exist, not just SEO"): Performance score **58/100**, LCP **6.4s** (Google's
+"good" threshold is ≤2.5s). Every Hero slide was stacked in the same spot
+(`position: absolute; inset: 0`, opacity toggled for the crossfade) with no conditional
+mounting, so the browser treated all of them as on-screen and fetched all four full-size
+rotation images immediately — only the first (`priority`) is actually needed before first
+paint. The other three (~124KB combined: Puzzle Dining Table 82KB, Epoxy River Coffee
+Table Sycamore 15KB, Keepsake Boxes 27KB) competed with the real LCP image for bandwidth
+during the critical load.
+
+**Fix:** `Hero.tsx` now mounts only slide 0's `<Image>` on initial render; a
+`useEffect` mounts the rest ~100ms after first paint (well before the 15s rotation
+interval ever needs them), so the crossfade still works but the other slides' fetches no
+longer compete with the critical path. Verified locally (pre-deploy, so not a like-for-like
+comparison with the production baseline above, but directionally consistent across two
+separate runs): Performance score 90–92, LCP ~3.3s.
+
+### J2. No dedicated audit of Core Web Vitals / Lighthouse scores existed before 2026-10-26 — **[Investigate]**
+Nothing in this repo or its CI runs a Lighthouse/performance check, so a regression like
+J1 has no way to be caught automatically — it was found by manually running Lighthouse
+against the live site, not by anything in the test suite. Worth considering a lightweight
+Lighthouse CI step (e.g. on a schedule or pre-release) if performance regressions become a
+recurring concern; not implemented now — flagging the gap in tooling, not proposing a
+specific solution.

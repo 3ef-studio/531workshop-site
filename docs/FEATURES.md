@@ -24,6 +24,11 @@ photos instead of one static image:
   any rotation control (permanently pauses) or the browser reports
   `prefers-reduced-motion: reduce` (detected via `useSyncExternalStore`, not a
   `useMemo`/effect read, to avoid a stale value surviving hydration).
+- Only the active slide's `<Image>` is mounted on initial render; the rest mount via a
+  `useEffect` ~100ms after first paint. All slides are stacked in the same spot for the
+  crossfade, so without this the browser would fetch every slide's full-size image
+  immediately regardless of which one is visible — see `TECHNICAL_DEBT.md` J1 for the
+  Lighthouse evidence (Performance 58→90+, LCP 6.4s→~3.3s).
 - Prev / dot-pagination / next / pause‑resume controls, plus an "i" info toggle showing the
   active slide's title/description, are rendered in **two** places — one cluster overlaid
   on the photo (desktop, `hidden sm:flex`) and a duplicate below the image on plain

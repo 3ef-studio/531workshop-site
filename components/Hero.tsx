@@ -33,6 +33,24 @@ export default function Hero() {
   const [isPaused, setIsPaused] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
+  // Every slide is stacked in the same spot (absolute + opacity, for the
+  // crossfade), so the browser treats all of them as "on screen" and fetches
+  // every slide's full-size image immediately — even though only the first
+  // is visible at load time. That competes with the actual LCP image for
+  // bandwidth and measurably slows first paint. Rendering only slide 0's
+  // <Image> up front, then mounting the rest right after the initial paint
+  // (well before the 15s rotation interval ever needs them), keeps the
+  // crossfade working without that cost.
+  const [mountedSlides, setMountedSlides] = useState<ReadonlySet<number>>(() => new Set([0]));
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const id = setTimeout(() => {
+      setMountedSlides(new Set(Array.from({ length: slides.length }, (_, i) => i)));
+    }, 100);
+    return () => clearTimeout(id);
+  }, [slides.length]);
+
   // useSyncExternalStore renders `false` (matching SSR) until React re-syncs to
   // the real matchMedia value right after hydration — unlike a plain useMemo
   // read, this can't leave attributes derived from it (e.g. the pause/resume
@@ -112,14 +130,16 @@ export default function Hero() {
                   transition: prefersReducedMotion ? "none" : "opacity 700ms ease",
                 }}
               >
-                <Image
-                  src={slide.src}
-                  alt={slide.alt}
-                  fill
-                  priority={i === 0}
-                  className="object-cover"
-                  sizes="100vw"
-                />
+                {mountedSlides.has(i) ? (
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    priority={i === 0}
+                    className="object-cover"
+                    sizes="100vw"
+                  />
+                ) : null}
               </div>
             ))
           ) : (
